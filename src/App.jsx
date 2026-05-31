@@ -34,6 +34,19 @@ const PROVIDERS = [
   { id: 29,  name: "Free",         color: "#CD1127", logo: "📺" },
 ];
 
+
+// ─── MOOD FILTERS ─────────────────────────────────────────────────────────────
+const MOODS = [
+  { id:"feelgood",  label:"😂 Feel-good",         runtime_lte:null, keywords:"feel-good",        release_gte:null, release_lte:null },
+  { id:"thrills",   label:"😱 Frissons",           runtime_lte:null, keywords:null,               release_gte:null, release_lte:null },
+  { id:"thinking",  label:"🤔 Qui fait réfléchir", runtime_lte:null, keywords:"thought-provoking",release_gte:null, release_lte:null },
+  { id:"emotional", label:"😢 Émouvant",           runtime_lte:null, keywords:"tearjerker",       release_gte:null, release_lte:null },
+  { id:"short",     label:"⏱ Court (- 1h30)",      runtime_lte:90,   keywords:null,               release_gte:null, release_lte:null },
+  { id:"long",      label:"🎬 Long (+ 2h)",         runtime_lte:null, keywords:null,               release_gte:null, release_lte:null },
+  { id:"recent",    label:"📅 Récent (2020+)",      runtime_lte:null, keywords:null,               release_gte:"2020-01-01", release_lte:null },
+  { id:"classic",   label:"🏛 Classique (- 2005)",  runtime_lte:null, keywords:null,               release_gte:null, release_lte:"2005-12-31" },
+];
+
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function generateCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -43,10 +56,11 @@ function generateUserId() {
   return Math.random().toString(36).substring(2, 12);
 }
 
-async function fetchMovies(genreId, providers = []) {
+async function fetchMovies(genreId, providers = [], moods = []) {
   const page = Math.floor(Math.random() * 5) + 1;
   const providerParam = providers.length > 0 ? `&providers=${providers.join(',')}` : '';
-  const res = await fetch(`/api/movies?genre=${genreId}&page=${page}${providerParam}`);
+  const moodParam = moods.length > 0 ? `&moods=${moods.join(',')}` : '';
+  const res = await fetch(`/api/movies?genre=${genreId}&page=${page}${providerParam}${moodParam}`);
   const data = await res.json();
   return data.movies || [];
 }
@@ -203,6 +217,12 @@ function DetailPanel({ movie, onClose }) {
             </div>
           </div>
         )}
+        {movie.trailerKey && (
+          <a href={`https://www.youtube.com/watch?v=${movie.trailerKey}`} target="_blank" rel="noopener noreferrer"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%", background: "rgba(255,77,77,0.1)", border: "1px solid rgba(255,77,77,0.28)", borderRadius: 14, padding: "13px 20px", color: "#FF4D4D", fontWeight: 700, fontSize: 14, textDecoration: "none", marginBottom: 18 }}>
+            ▶ Voir la bande-annonce
+          </a>
+        )}
         <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, lineHeight: 1.75 }}>{movie.synopsis}</p>
       </div>
     </div>
@@ -233,11 +253,30 @@ function MatchModal({ item, type, onClose }) {
             </div>
           </>
         )}
-        <button onClick={onClose} style={{ background: "#FF4D4D", color: "white", border: "none", borderRadius: 14, padding: "15px 24px", fontSize: 16, fontWeight: 600, cursor: "pointer", width: "100%", fontFamily: "DM Sans, sans-serif" }}>
+        <button onClick={onClose} style={{ background: "#FF4D4D", color: "white", border: "none", borderRadius: 14, padding: "15px 24px", fontSize: 16, fontWeight: 600, cursor: "pointer", width: "100%", fontFamily: "DM Sans, sans-serif", marginBottom: type === "movie" ? 10 : 0 }}>
           {type === "genre" ? "Continuer →" : "🍿 C'est parti !"}
         </button>
+        {type === "movie" && (
+          <ShareMatchButton title={item.title} />
+        )}
       </div>
     </div>
+  );
+}
+
+function ShareMatchButton({ title }) {
+  const [copied, setCopied] = useState(false);
+  const text = `🎬 On regarde "${title}" ce soir ! Trouvé avec CineMatch`;
+  const share = async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title: "CineMatch", text }); return; } catch {}
+    }
+    navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  };
+  return (
+    <button onClick={share} style={{ background: copied ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.06)", color: copied ? "#4ADE80" : "rgba(255,255,255,0.5)", border: copied ? "1px solid rgba(74,222,128,0.3)" : "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: "12px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer", width: "100%", fontFamily: "DM Sans, sans-serif", transition: "all 0.2s" }}>
+      {copied ? "✓ Copié !" : "📱 Partager le match"}
+    </button>
   );
 }
 
@@ -256,6 +295,7 @@ export default function CineMatch() {
   const [sessionCode, setSessionCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [selectedProviders, setSelectedProviders] = useState(() => JSON.parse(localStorage.getItem('selectedProviders') || '[]'));
+  const [selectedMoods, setSelectedMoods] = useState([]);
 
   // Genre phase
   const [genreIdx, setGenreIdx] = useState(0);
@@ -277,6 +317,8 @@ export default function CineMatch() {
   const [seenIds, setSeenIds] = useState(() => new Set((JSON.parse(localStorage.getItem(`seenIds_${localStorage.getItem('userId') || 'guest'}`) || "[]")).map(Number)));
   const [seenMovies, setSeenMovies] = useState(() => JSON.parse(localStorage.getItem(`seenMovies_${localStorage.getItem('userId') || 'guest'}`) || "[]"));
   const [skipSeen, setSkipSeen] = useState(false);
+  const wishlistKey = `wishlist_${userId}`;
+  const [wishlist, setWishlist] = useState(() => JSON.parse(localStorage.getItem(`wishlist_${localStorage.getItem('userId') || 'guest'}`) || "[]"));
   const [loading, setLoading] = useState(false);
   const [myMovieLikes, setMyMovieLikes] = useState(new Set());
   const [partnerMovieLikes, setPartnerMovieLikes] = useState(new Set());
@@ -533,7 +575,7 @@ export default function CineMatch() {
     });
   };
 
-  const startMovies = async (g) => {
+  const startMoviesWithMoods = async (g, moods) => {
     selGenreRef.current = g;
     setSelGenre(g);
     setLoading(true);
@@ -549,17 +591,16 @@ export default function CineMatch() {
         if (data?.movie_list && data?.genre_id === g.id) {
           movieList = JSON.parse(data.movie_list);
         } else {
-          movieList = await fetchMovies(g.id);
+          movieList = await fetchMovies(g.id, selectedProviders, moods);
           await supabase.from("sessions").update({
             genre_id: g.id,
             movie_list: JSON.stringify(movieList),
           }).eq("id", sessionId);
         }
       } else {
-        movieList = await fetchMovies(g.id);
+        movieList = await fetchMovies(g.id, selectedProviders, moods);
       }
       setMovies(movieList);
-      // Start at first non-seen movie if skipSeen is on
       let startIdx = 0;
       if (skipSeen) {
         while (startIdx < movieList.length && seenIds.has(movieList[startIdx].id)) startIdx++;
@@ -567,6 +608,8 @@ export default function CineMatch() {
       setMovieIdx(startIdx);
       setMyMovieLikes(new Set());
       setPartnerMovieLikes(new Set());
+      setGenreMatchQueue([]);
+      setGenreMatch(null);
       setScreen("movie");
     } catch(e) {
       console.error("startMovies error:", e);
@@ -574,7 +617,37 @@ export default function CineMatch() {
     }
     setLoading(false);
   };
+
+  const startMovies = async (g) => {
+    selGenreRef.current = g;
+    setSelGenre(g);
+    setScreen("mood");
+  };
+
+  // startMoviesDirect is now startMoviesWithMoods above
   
+  const toggleWishlist = (movie) => {
+    setWishlist(prev => {
+      const exists = prev.find(m => m.id === movie.id);
+      let updated;
+      if (exists) {
+        updated = prev.filter(m => m.id !== movie.id);
+      } else {
+        updated = [...prev, { id: movie.id, title: movie.title, poster: movie.poster, year: movie.year, imdb: movie.imdb }];
+      }
+      localStorage.setItem(wishlistKey, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const removeWishlist = (id) => {
+    setWishlist(prev => {
+      const updated = prev.filter(m => m.id !== id);
+      localStorage.setItem(wishlistKey, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const copyLink = () => {
     const url = `${window.location.origin}?join=${sessionCode}`;
     navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
@@ -585,7 +658,7 @@ export default function CineMatch() {
     setScreen("home"); setGenreIdx(0); setMatchedGenres([]); setMovies([]);
     setMovieMatch(null); setGenreMatch(null); setSessionId(null);
     setPartnerConnected(false); setMyGenreLikes(new Set()); setPartnerGenreLikes(new Set());
-    setPartnerMovieLikes(new Set()); setPendingGenreMatch(null); setGenreMatchQueue([]); lastPartnerGenreRef.current = -1;
+    setPartnerMovieLikes(new Set()); setPendingGenreMatch(null); setGenreMatchQueue([]); lastPartnerGenreRef.current = -1; setSelectedMoods([]);
   };
 
   // Auto-join from URL
@@ -831,7 +904,7 @@ useEffect(() => {
               <div style={{ position: "relative", height: 430, marginBottom: 16 }}>
                 {movieIdx + 2 < movies.length && <div style={{ position: "absolute", inset: 0, borderRadius: 22, background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.04)", transform: "scale(0.88) translateY(16px)" }} />}
                 {movieIdx + 1 < movies.length && <div style={{ position: "absolute", inset: 0, borderRadius: 22, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", transform: "scale(0.94) translateY(8px)" }} />}
-                <MovieCard key={`${selGenre?.id}-${movieIdx}`} movie={cur} onSwipe={onMovieSwipe} onDetail={() => setDetail(cur)} seenIds={seenIds} onToggleSeen={toggleSeen} />
+                <MovieCard key={`${selGenre?.id}-${movieIdx}`} movie={cur} onSwipe={onMovieSwipe} onDetail={() => setDetail(cur)} seenIds={seenIds} onToggleSeen={toggleSeen} wishlist={wishlist} onToggleWishlist={toggleWishlist} />
               </div>
               <div style={{ display: "flex", justifyContent: "center", gap: 22, marginBottom: 12 }}>
                 <button onClick={() => onMovieSwipe(false)} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,77,77,0.1)", border: "1.5px solid rgba(255,77,77,0.28)", fontSize: 24, cursor: "pointer" }}>✗</button>
@@ -887,6 +960,79 @@ useEffect(() => {
                 </button>
               )}
               <Btn onClick={() => setScreen("home")}>Valider ✓</Btn>
+            </div>
+          )}
+
+          {/* MOOD FILTERS */}
+          {screen === "mood" && (
+            <div style={{ paddingTop: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: "rgba(255,75,75,0.65)", fontWeight: 700, marginBottom: 4 }}>Étape 2 · Ambiance</div>
+                  <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 20 }}>Une ambiance ce soir ?</div>
+                </div>
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
+                Optionnel — rien = tous les films du genre.
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+                {MOODS.map(m => {
+                  const sel = selectedMoods.includes(m.id);
+                  return (
+                    <div key={m.id} onClick={() => setSelectedMoods(prev => sel ? prev.filter(x => x !== m.id) : [...prev, m.id])}
+                      style={{ borderRadius: 12, padding: "10px 14px", cursor: "pointer", border: sel ? "2px solid #FF4D4D" : "1px solid rgba(255,255,255,0.12)", background: sel ? "rgba(255,77,77,0.12)" : "rgba(255,255,255,0.04)", transition: "all 0.15s", userSelect: "none" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#FF4D4D" : "rgba(255,255,255,0.7)" }}>{m.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              {selectedMoods.length > 0 && (
+                <div style={{ background: "rgba(255,77,77,0.08)", border: "1px solid rgba(255,77,77,0.2)", borderRadius: 12, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "rgba(255,77,77,0.8)" }}>
+                  {selectedMoods.length} filtre{selectedMoods.length > 1 ? "s" : ""} sélectionné{selectedMoods.length > 1 ? "s" : ""}
+                </div>
+              )}
+              <Btn onClick={() => startMoviesWithMoods(selGenreRef.current, selectedMoods)}>
+                {selectedMoods.length > 0 ? `Lancer avec ${selectedMoods.length} filtre${selectedMoods.length > 1 ? "s" : ""}` : "Lancer sans filtre →"}
+              </Btn>
+              <Btn outline onClick={() => startMoviesWithMoods(selGenreRef.current, [])}>Passer cette étape</Btn>
+            </div>
+          )}
+
+          {/* WISHLIST */}
+          {screen === "wishlist" && (
+            <div style={{ paddingTop: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 22 }}>Ma liste</div>
+                <button onClick={() => setScreen("home")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>← Retour</button>
+              </div>
+              {wishlist.length === 0 ? (
+                <div style={{ textAlign: "center", paddingTop: 40, color: "rgba(255,255,255,0.3)", fontSize: 15 }}>
+                  <div style={{ fontSize: 48, marginBottom: 16 }}>🔖</div>
+                  Votre liste est vide<br/>
+                  <span style={{ fontSize: 13, marginTop: 8, display: "block" }}>Appuyez sur 🔖 sur les cartes pour sauvegarder</span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>
+                    {wishlist.length} film{wishlist.length > 1 ? "s" : ""} sauvegardé{wishlist.length > 1 ? "s" : ""}
+                  </div>
+                  {wishlist.map(m => (
+                    <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "10px 14px" }}>
+                      <div style={{ width: 40, height: 56, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}>
+                        <Poster url={m.poster} title={m.title} style={{ width: "100%", height: "100%" }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.title}</div>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{m.year}{m.imdb ? ` · ⭐ ${m.imdb}` : ""}</div>
+                      </div>
+                      <button onClick={() => removeWishlist(m.id)} style={{ background: "rgba(255,77,77,0.1)", border: "1px solid rgba(255,77,77,0.3)", borderRadius: 8, padding: "6px 10px", color: "#FF4D4D", fontSize: 12, cursor: "pointer", fontFamily: "DM Sans, sans-serif", flexShrink: 0 }}>✕</button>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 10 }}>
+                    <Btn outline onClick={() => { setWishlist([]); localStorage.removeItem(wishlistKey); }}>Tout effacer</Btn>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
