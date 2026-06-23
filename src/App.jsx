@@ -7,18 +7,67 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsam1meWtoa2hhYnpneGV1dHltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMjQxNjQsImV4cCI6MjA5NDcwMDE2NH0._O8bxcAcU9voDu0SB6cLGgXOgIa3joZMsGeiwj_kFvs"
 );
 
+
+// ─── THEME : NOIR CINEMA ──────────────────────────────────────────────────────
+const T = {
+  bg: "#0A0A0B",
+  bgGrad: "radial-gradient(ellipse at top, #16140F 0%, #0A0A0B 55%)",
+  card: "#16161A",
+  cardSoft: "#1C1C20",
+  border: "rgba(212,175,55,0.18)",
+  borderSoft: "rgba(255,255,255,0.08)",
+  accent: "#D4AF37",
+  accentSoft: "rgba(212,175,55,0.12)",
+  accentDark: "#0A0A0B",
+  text: "#F5F0E6",
+  textMid: "rgba(245,240,230,0.7)",
+  sub: "rgba(245,240,230,0.45)",
+  display: "'Fraunces', serif",
+  body: "'DM Sans', sans-serif",
+  btnGrad: "linear-gradient(135deg, #D4AF37, #C19B2E)",
+  green: "#5FB97A",
+  red: "#D9534F",
+};
+
+// ─── SVG ICONS ────────────────────────────────────────────────────────────────
+function Icon({ name, color = T.accent, size = 36, fill = false }) {
+  const s = { width: size, height: size, viewBox: "0 0 32 32", fill: "none", stroke: color, strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" };
+  const icons = {
+    clap: <svg {...s}><rect x="4" y="12" width="24" height="16" rx="2"/><path d="M4 12L6.5 5L28 8L26.5 15"/><path d="M14 6L8 13M16 7L14 14M22 8.5L20 15"/></svg>,
+    action: <svg {...s}><path d="M13 2L5 18h7l-2 12 12-18h-7l2-10z"/></svg>,
+    comedy: <svg {...s}><circle cx="16" cy="16" r="12"/><path d="M11 13h.01M21 13h.01"/><path d="M10 19c1.5 2 10.5 2 12 0"/></svg>,
+    thriller: <svg {...s}><path d="M16 3l11 6v7c0 7-5 11-11 13C10 27 5 23 5 16V9l11-6z"/><path d="M16 12v5"/><path d="M16 21h.01"/></svg>,
+    scifi: <svg {...s}><ellipse cx="16" cy="16" rx="13" ry="5"/><circle cx="16" cy="16" r="5"/></svg>,
+    horror: <svg {...s}><path d="M16 4C9 4 6 9 6 15c0 4 2 6 2 9h16c0-3 2-5 2-9 0-6-3-11-10-11z"/><path d="M12 14h.01M20 14h.01"/><path d="M13 22v3M19 22v3M16 22v4"/></svg>,
+    drama: <svg {...s}><path d="M6 6c0 10 2 16 10 16s10-6 10-16c-4-1-6-2-10-2s-6 1-10 2z"/><path d="M11 12h.01M21 12h.01"/><path d="M13 17c1 1.5 5 1.5 6 0"/></svg>,
+    romance: <svg {...s}><path d="M16 27C16 27 4 20 4 11.5C4 7 7 4 11 4c2.5 0 4 1.5 5 3c1-1.5 2.5-3 5-3c4 0 7 3 7 7.5C28 20 16 27 16 27z"/></svg>,
+    animation: <svg {...s}><path d="M16 3l3.5 7L27 11l-5.5 5.5L23 24l-7-4-7 4 1.5-7.5L5 11l7.5-1z"/></svg>,
+    adventure: <svg {...s}><circle cx="16" cy="16" r="12"/><path d="M21 11l-3.5 7.5L10 22l3.5-7.5L21 11z"/></svg>,
+    documentary: <svg {...s}><rect x="4" y="8" width="24" height="18" rx="2"/><circle cx="16" cy="17" r="4"/><path d="M9 8V5h6v3"/></svg>,
+    heart: <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M12 21C12 21 3 14.5 3 8.5C3 5.5 5.5 3 8.5 3C10.3 3 12 4.2 12 4.2C12 4.2 13.7 3 15.5 3C18.5 3 21 5.5 21 8.5C21 14.5 12 21 12 21Z"/></svg>,
+    x: <svg {...s}><path d="M8 8l16 16M24 8L8 24"/></svg>,
+    play: <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M8 5v14l11-7z"/></svg>,
+    bookmark: <svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? color : "none"} stroke={color} strokeWidth={2} strokeLinejoin="round"><path d="M6 4h12v16l-6-4-6 4V4z"/></svg>,
+    back: <svg {...s}><path d="M20 8l-8 8 8 8"/></svg>,
+    star: <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M12 2l3 6.5 7 .8-5 4.8 1.3 7L12 17.8 5.7 21l1.3-7-5-4.8 7-.8z"/></svg>,
+    share: <svg {...s}><circle cx="7" cy="16" r="3"/><circle cx="23" cy="8" r="3"/><circle cx="23" cy="24" r="3"/><path d="M10 14.5l10-5M10 17.5l10 5"/></svg>,
+    check: <svg {...s}><path d="M6 16l7 7L26 9"/></svg>,
+  };
+  return icons[name] || null;
+}
+
 // ─── GENRES ───────────────────────────────────────────────────────────────────
 const GENRES = [
-  { id: "action",      name: "Action",       emoji: "💥", color: "#FF4D4D", desc: "Adrenaline & explosions" },
-  { id: "comedy",      name: "Comedie",      emoji: "😂", color: "#FFB347", desc: "Rires garantis" },
-  { id: "thriller",    name: "Thriller",     emoji: "😰", color: "#8B5CF6", desc: "Suspense & tension" },
-  { id: "scifi",       name: "Sci-Fi",       emoji: "🚀", color: "#06B6D4", desc: "Futur & univers" },
-  { id: "horror",      name: "Horreur",      emoji: "👻", color: "#6366F1", desc: "Frissons & terreur" },
-  { id: "drama",       name: "Drame",        emoji: "🎭", color: "#14B8A6", desc: "Emotions profondes" },
-  { id: "romance",     name: "Romance",      emoji: "💕", color: "#FF69B4", desc: "Feel-good & amour" },
-  { id: "animation",   name: "Animation",    emoji: "✨", color: "#84CC16", desc: "Tous publics" },
-  { id: "adventure",   name: "Aventure",     emoji: "🗺️", color: "#38BDF8", desc: "Exploration & epopee" },
-  { id: "documentary", name: "Documentaire", emoji: "🎥", color: "#F97316", desc: "Le monde reel" },
+  { id: "action",      name: "Action",       icon: "action",      color: "#D4AF37", desc: "Adrenaline & explosions" },
+  { id: "comedy",      name: "Comedie",      icon: "comedy",      color: "#D4AF37", desc: "Rires garantis" },
+  { id: "thriller",    name: "Thriller",     icon: "thriller",    color: "#D4AF37", desc: "Suspense & tension" },
+  { id: "scifi",       name: "Sci-Fi",       icon: "scifi",       color: "#D4AF37", desc: "Futur & univers" },
+  { id: "horror",      name: "Horreur",      icon: "horror",      color: "#D4AF37", desc: "Frissons & terreur" },
+  { id: "drama",       name: "Drame",        icon: "drama",       color: "#D4AF37", desc: "Emotions profondes" },
+  { id: "romance",     name: "Romance",      icon: "romance",     color: "#D4AF37", desc: "Feel-good & amour" },
+  { id: "animation",   name: "Animation",    icon: "animation",   color: "#D4AF37", desc: "Tous publics" },
+  { id: "adventure",   name: "Aventure",     icon: "adventure",   color: "#D4AF37", desc: "Exploration & epopee" },
+  { id: "documentary", name: "Documentaire", icon: "documentary", color: "#D4AF37", desc: "Le monde reel" },
 ];
 
 
@@ -78,7 +127,7 @@ function RatingBadge({ score }) {
 
 function Ind({ type }) {
   return (
-    <div style={{ position: "absolute", top: 20, right: type === "like" ? 18 : "auto", left: type === "nope" ? 18 : "auto", background: type === "like" ? "rgba(74,222,128,0.14)" : "rgba(255,77,77,0.14)", border: `2.5px solid ${type === "like" ? "#4ADE80" : "#FF4D4D"}`, borderRadius: 10, padding: "5px 14px", color: type === "like" ? "#4ADE80" : "#FF4D4D", fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 18, letterSpacing: 2, transform: type === "like" ? "rotate(8deg)" : "rotate(-8deg)", pointerEvents: "none" }}>
+    <div style={{ position: "absolute", top: 20, right: type === "like" ? 18 : "auto", left: type === "nope" ? 18 : "auto", background: type === "like" ? T.accentSoft : "rgba(217,83,79,0.16)", border: `2.5px solid ${type === "like" ? T.accent : T.red}`, borderRadius: 10, padding: "5px 14px", color: type === "like" ? T.accent : T.red, fontFamily: T.display, fontWeight: 700, fontSize: 18, letterSpacing: 1, transform: type === "like" ? "rotate(8deg)" : "rotate(-8deg)", pointerEvents: "none" }}>
       {type === "like" ? "MATCH!" : "NOPE"}
     </div>
   );
@@ -93,7 +142,7 @@ function Poster({ url, title, style }) {
       {url && <img src={url} alt={title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: ok ? 1 : 0, transition: "opacity 0.4s" }} onLoad={() => setOk(true)} />}
       {!ok && (
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
-          <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 34, color: `hsl(${hue},65%,65%)` }}>{initials}</div>
+          <div style={{ fontFamily: T.display, fontWeight: 800, fontSize: 34, color: `hsl(${hue},65%,65%)` }}>{initials}</div>
           <div style={{ fontSize: 10, color: `hsl(${hue},30%,45%)`, textAlign: "center", padding: "0 10px", lineHeight: 1.4 }}>{title}</div>
         </div>
       )}
@@ -133,8 +182,8 @@ function GenreCard({ genre, onSwipe }) {
       onMouseDown={e => onStart(e.clientX)} onMouseMove={e => onMove(e.clientX, 0.08)} onMouseUp={onEnd} onMouseLeave={onEnd}
       onTouchStart={e => onStart(e.touches[0].clientX)} onTouchMove={e => onMove(e.touches[0].clientX, 0.08)} onTouchEnd={onEnd}
     >
-      <div style={{ fontSize: 82 }}>{genre.emoji}</div>
-      <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 36, color: genre.color, letterSpacing: "-1px" }}>{genre.name}</div>
+      <Icon name={genre.icon} size={84} />
+      <div style={{ fontFamily: T.display, fontWeight: 800, fontSize: 36, color: genre.color, letterSpacing: "-1px" }}>{genre.name}</div>
       <div style={{ color: "rgba(255,255,255,0.38)", fontSize: 15 }}>{genre.desc}</div>
       {ind && <Ind type={ind} />}
     </div>
@@ -164,12 +213,12 @@ function MovieCard({ movie, onSwipe, onDetail, seenIds, onToggleSeen }) {
       <div style={{ padding: "13px 16px 14px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 7 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 18, letterSpacing: "-0.3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{movie.title}</div>
+            <div style={{ fontFamily: T.display, fontWeight: 800, fontSize: 18, letterSpacing: "-0.3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{movie.title}</div>
             <div style={{ color: "rgba(255,255,255,0.32)", fontSize: 12, marginTop: 3 }}>{movie.year}</div>
           </div>
           <button onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}
             onClick={e => { e.stopPropagation(); onDetail(); }}
-            style={{ flexShrink: 0, background: "rgba(255,75,75,0.1)", border: "1px solid rgba(255,75,75,0.28)", borderRadius: 9, padding: "6px 12px", color: "#FF4D4D", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>
+            style={{ flexShrink: 0, background: "rgba(255,75,75,0.1)", border: "1px solid rgba(255,75,75,0.28)", borderRadius: 9, padding: "6px 12px", color: T.accent, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>
             + Info
           </button>
         </div>
@@ -197,7 +246,7 @@ function DetailPanel({ movie, onClose }) {
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,rgba(0,0,0,0.1) 30%,#0A0A0F 100%)" }} />
         <button onClick={onClose} style={{ position: "absolute", top: 20, left: 20, background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 50, width: 40, height: 40, color: "#fff", fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>←</button>
         <div style={{ position: "absolute", bottom: 20, left: 20, right: 20 }}>
-          <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 24, lineHeight: 1.15, marginBottom: 10 }}>{movie.title}</div>
+          <div style={{ fontFamily: T.display, fontWeight: 800, fontSize: 24, lineHeight: 1.15, marginBottom: 10 }}>{movie.title}</div>
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
             <RatingBadge score={movie.imdb} />
             {movie.year && <span style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 7, padding: "3px 8px", fontSize: 11, color: "rgba(255,255,255,0.55)" }}>{movie.year}</span>}
@@ -219,7 +268,7 @@ function DetailPanel({ movie, onClose }) {
         )}
         {movie.trailerKey && (
           <a href={`https://www.youtube.com/watch?v=${movie.trailerKey}`} target="_blank" rel="noopener noreferrer"
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%", background: "rgba(255,77,77,0.1)", border: "1px solid rgba(255,77,77,0.28)", borderRadius: 14, padding: "13px 20px", color: "#FF4D4D", fontWeight: 700, fontSize: 14, textDecoration: "none", marginBottom: 18 }}>
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%", background: T.accentSoft, border: `1px solid ${T.border}`, borderRadius: 14, padding: "13px 20px", color: T.accent, fontWeight: 700, fontSize: 14, textDecoration: "none", marginBottom: 18 }}>
             ▶ Voir la bande-annonce
           </a>
         )}
@@ -234,11 +283,11 @@ function MatchModal({ item, type, onClose }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, padding: 20 }}>
       <div style={{ background: "#13131A", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 28, padding: "36px 28px", textAlign: "center", maxWidth: 340, width: "100%" }}>
         <div style={{ fontSize: 52, marginBottom: 6 }}>🎉</div>
-        <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 28, color: "#FF4D4D", marginBottom: 18, letterSpacing: "-1px" }}>C'est un MATCH !</div>
+        <div style={{ fontFamily: T.display, fontWeight: 800, fontSize: 28, color: T.accent, marginBottom: 18, letterSpacing: "-1px" }}>C'est un MATCH !</div>
         {type === "genre" ? (
           <>
-            <div style={{ fontSize: 56, marginBottom: 10 }}>{item.emoji}</div>
-            <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 22, marginBottom: 6 }}>{item.name}</div>
+            <div style={{ marginBottom: 10 }}><Icon name={item.icon} size={56} /></div>
+            <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 22, marginBottom: 6 }}>{item.name}</div>
             <div style={{ color: "rgba(255,255,255,0.38)", fontSize: 14, marginBottom: 24 }}>Vous aimez tous les deux ce genre !</div>
           </>
         ) : (
@@ -246,14 +295,14 @@ function MatchModal({ item, type, onClose }) {
             <div style={{ width: 110, height: 150, borderRadius: 12, overflow: "hidden", margin: "0 auto 14px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
               <Poster url={item.poster} title={item.title} style={{ width: "100%", height: "100%" }} />
             </div>
-            <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 19, marginBottom: 8 }}>{item.title}</div>
+            <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 19, marginBottom: 8 }}>{item.title}</div>
             <RatingBadge score={item.imdb} />
             <div style={{ color: "rgba(255,255,255,0.38)", fontSize: 14, margin: "12px 0 24px" }}>
               Ce soir : <strong style={{ color: "rgba(255,255,255,0.8)" }}>{item.title}</strong> !
             </div>
           </>
         )}
-        <button onClick={onClose} style={{ background: "#FF4D4D", color: "white", border: "none", borderRadius: 14, padding: "15px 24px", fontSize: 16, fontWeight: 600, cursor: "pointer", width: "100%", fontFamily: "DM Sans, sans-serif", marginBottom: type === "movie" ? 10 : 0 }}>
+        <button onClick={onClose} style={{ background: T.btnGrad, color: T.accentDark, border: "none", borderRadius: 14, padding: "15px 24px", fontSize: 16, fontWeight: 700, cursor: "pointer", width: "100%", fontFamily: T.body, marginBottom: type === "movie" ? 10 : 0 }}>
           {type === "genre" ? "Continuer →" : "🍿 C'est parti !"}
         </button>
         {type === "movie" && (
@@ -694,7 +743,7 @@ useEffect(() => {
   }, [sessionId]);
   
   const Btn = ({ onClick, children, outline, disabled }) => (
-    <button onClick={onClick} disabled={disabled} style={{ background: outline ? "rgba(255,255,255,0.06)" : "#FF4D4D", color: outline ? "rgba(255,255,255,0.55)" : "white", border: outline ? "1px solid rgba(255,255,255,0.1)" : "none", borderRadius: 14, padding: "15px 24px", fontSize: 15, fontWeight: 600, cursor: disabled ? "default" : "pointer", width: "100%", fontFamily: "DM Sans, sans-serif", marginBottom: 10, opacity: disabled ? 0.4 : 1 }}>{children}</button>
+    <button onClick={onClick} disabled={disabled} style={{ background: outline ? "transparent" : T.btnGrad, color: outline ? T.text : T.accentDark, border: outline ? `1.5px solid ${T.borderSoft}` : "none", borderRadius: 14, padding: "15px 24px", fontSize: 15, fontWeight: outline ? 600 : 700, cursor: disabled ? "default" : "pointer", width: "100%", fontFamily: T.body, marginBottom: 10, opacity: disabled ? 0.4 : 1 }}>{children}</button>
   );
 
   const inputStyle = { width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "13px 15px", color: "#F0EEE8", fontSize: 15, fontFamily: "DM Sans, sans-serif", outline: "none", marginBottom: 12 };
@@ -702,21 +751,21 @@ useEffect(() => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        body{background:#0A0A0F;color:#F0EEE8;font-family:'DM Sans',sans-serif;min-height:100vh}
+        body{background:#0A0A0B;color:#F5F0E6;font-family:'DM Sans',sans-serif;min-height:100vh}
         ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:4px}
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
         @keyframes pulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.4);opacity:1}}
         @keyframes spin{to{transform:rotate(360deg)}}
       `}</style>
 
-      <div style={{ minHeight: "100vh", background: "#0A0A0F", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ minHeight: "100vh", background: T.bgGrad, display: "flex", flexDirection: "column", alignItems: "center" }}>
         <div style={{ position: "fixed", inset: 0, pointerEvents: "none", background: "radial-gradient(ellipse at 20% 20%,rgba(255,75,75,0.07) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(100,80,255,0.07) 0%,transparent 55%)" }} />
 
         {/* Header */}
         <div style={{ width: "100%", maxWidth: 440, padding: "22px 20px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", zIndex: 1 }}>
-          <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 24, letterSpacing: "-1px" }}>Cine<span style={{ color: "#FF4D4D" }}>Match</span></div>
+          <div style={{ fontFamily: T.display, fontWeight: 800, fontSize: 24, letterSpacing: "-1px" }}>Cine<span style={{ color: T.accent }}>Match</span></div>
           {screen !== "home" && (
             <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 100, padding: "5px 14px", fontSize: 12, color: partnerConnected ? "#4ADE80" : "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", gap: 6 }}>
               {partnerConnected && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ADE80" }} />}
@@ -731,7 +780,7 @@ useEffect(() => {
           {screen === "home" && (
             <div style={{ textAlign: "center", paddingTop: 36 }}>
               <div style={{ fontSize: 72, marginBottom: 18, animation: "float 3s ease-in-out infinite" }}>🎬</div>
-              <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 36, lineHeight: 1.1, marginBottom: 12, letterSpacing: "-2px" }}>Trouvez votre<br /><span style={{ color: "#FF4D4D" }}>film ce soir</span></div>
+              <div style={{ fontFamily: T.display, fontWeight: 800, fontSize: 36, lineHeight: 1.1, marginBottom: 12, letterSpacing: "-2px" }}>Trouvez votre<br /><span style={{ color: T.accent }}>film ce soir</span></div>
               <div style={{ color: "rgba(255,255,255,0.38)", fontSize: 15, marginBottom: 36, lineHeight: 1.6 }}>Swipez ensemble, matchez sur le meme film.</div>
               <Btn onClick={() => setScreen("create")}>Creer une session 🚀</Btn>
               <Btn outline onClick={() => setScreen("join")}>Rejoindre une session</Btn>
@@ -753,7 +802,7 @@ useEffect(() => {
           {/* CREATE SESSION */}
           {screen === "create" && (
             <div style={{ paddingTop: 36 }}>
-              <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 25, marginBottom: 6 }}>Nouvelle session</div>
+              <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 25, marginBottom: 6 }}>Nouvelle session</div>
               <div style={{ color: "rgba(255,255,255,0.33)", fontSize: 14, marginBottom: 26 }}>Entrez votre prenom</div>
               <input placeholder="Votre prenom" value={myName} onChange={e => setMyName(e.target.value)} style={inputStyle} />
               <Btn onClick={createSession} disabled={!myName.trim()}>Creer et inviter 🔗</Btn>
@@ -764,13 +813,13 @@ useEffect(() => {
           {/* WAITING FOR PARTNER */}
           {screen === "waiting" && (
             <div style={{ paddingTop: 36, textAlign: "center" }}>
-              <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 22, marginBottom: 8 }}>Invitez votre partenaire</div>
+              <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 22, marginBottom: 8 }}>Invitez votre partenaire</div>
               <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 14, marginBottom: 28 }}>Partagez ce code ou ce lien</div>
 
               {/* Big code */}
               <div style={{ background: "rgba(255,75,75,0.1)", border: "2px solid rgba(255,75,75,0.3)", borderRadius: 18, padding: "20px 24px", marginBottom: 20 }}>
                 <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 2, color: "rgba(255,75,75,0.7)", marginBottom: 8 }}>Code de session</div>
-                <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 42, letterSpacing: 8, color: "#FF4D4D" }}>{sessionCode}</div>
+                <div style={{ fontFamily: T.display, fontWeight: 800, fontSize: 42, letterSpacing: 8, color: T.accent }}>{sessionCode}</div>
               </div>
 
               {/* QR Code */}
@@ -794,11 +843,11 @@ useEffect(() => {
           {/* JOIN SESSION */}
           {screen === "join" && (
             <div style={{ paddingTop: 36 }}>
-              <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 25, marginBottom: 6 }}>Rejoindre une session</div>
+              <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 25, marginBottom: 6 }}>Rejoindre une session</div>
               <div style={{ color: "rgba(255,255,255,0.33)", fontSize: 14, marginBottom: 26 }}>Entrez le code partagé par votre partenaire</div>
               <input placeholder="Votre prenom" value={myName} onChange={e => setMyName(e.target.value)} style={inputStyle} />
               <input placeholder="Code de session (ex: ABC123)" value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                style={{ ...inputStyle, fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: 4, textAlign: "center" }} />
+                style={{ ...inputStyle, fontFamily: T.display, fontWeight: 700, fontSize: 20, letterSpacing: 4, textAlign: "center" }} />
               <Btn onClick={joinSession} disabled={!joinCode.trim() || !myName.trim()}>Rejoindre ✓</Btn>
               <Btn outline onClick={() => setScreen("home")}>Retour</Btn>
             </div>
@@ -807,8 +856,8 @@ useEffect(() => {
           {/* LOADING */}
           {screen === "loading" && (
             <div style={{ textAlign: "center", paddingTop: 80 }}>
-              <div style={{ fontSize: 64, marginBottom: 20, animation: "float 2s ease-in-out infinite" }}>{selGenre?.emoji || "🎬"}</div>
-              <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Chargement des films...</div>
+              <div style={{ marginBottom: 20, animation: "float 2s ease-in-out infinite" }}><Icon name={selGenre?.icon || "clap"} size={64} /></div>
+              <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Chargement des films...</div>
               <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 14, marginBottom: 28 }}>Recherche en cours sur TMDB</div>
               <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
                 {[0, 1, 2, 3, 4].map(i => <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "rgba(255,75,75,0.4)", animation: `pulse 1.2s ${i * 0.2}s ease-in-out infinite` }} />)}
@@ -823,7 +872,7 @@ useEffect(() => {
                 <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: "rgba(255,75,75,0.65)", fontWeight: 700, marginBottom: 6 }}>Etape 1 · Genres</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ flex: 1, height: 2.5, background: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{ height: "100%", background: "#FF4D4D", borderRadius: 3, width: `${(genreIdx / GENRES.length) * 100}%`, transition: "width 0.3s" }} />
+                    <div style={{ height: "100%", background: T.accent, borderRadius: 3, width: `${(genreIdx / GENRES.length) * 100}%`, transition: "width 0.3s" }} />
                   </div>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>{genreIdx}/{GENRES.length}</div>
                 </div>
@@ -840,7 +889,7 @@ useEffect(() => {
                 <GenreCard key={genreIdx} genre={GENRES[genreIdx]} onSwipe={onGenreSwipe} />
               </div>
               <div style={{ display: "flex", justifyContent: "center", gap: 22, marginBottom: 14 }}>
-                <button onClick={() => onGenreSwipe(false)} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,77,77,0.1)", border: "1.5px solid rgba(255,77,77,0.28)", fontSize: 24, cursor: "pointer" }}>✗</button>
+                <button onClick={() => onGenreSwipe(false)} style={{ width: 64, height: 64, borderRadius: "50%", background: T.card, border: `1.5px solid ${T.red}55`, color: T.red, fontSize: 24, cursor: "pointer" }}>✗</button>
                 <button onClick={() => onGenreSwipe(true)} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(74,222,128,0.1)", border: "1.5px solid rgba(74,222,128,0.28)", fontSize: 24, cursor: "pointer" }}>♥</button>
               </div>
               <div style={{ textAlign: "center", fontSize: 12, color: "rgba(255,255,255,0.18)" }}>Glissez ou appuyez pour voter</div>
@@ -851,7 +900,7 @@ useEffect(() => {
           {screen === "genre" && genreDone && matchedGenres.length === 0 && (
             <div style={{ textAlign: "center", paddingTop: 60 }}>
               <div style={{ fontSize: 56, marginBottom: 16 }}>😅</div>
-              <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 22, marginBottom: 10 }}>Aucun genre en commun</div>
+              <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 22, marginBottom: 10 }}>Aucun genre en commun</div>
               <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 14, marginBottom: 28 }}>Recommencez !</div>
               <Btn onClick={() => { setGenreIdx(0); setMatchedGenres([]); setMyGenreLikes(new Set()); setPartnerGenreLikes(new Set()); }}>Recommencer</Btn>
             </div>
@@ -861,13 +910,13 @@ useEffect(() => {
 		 {screen === "genre" && genreDone && !genreMatch && matchedGenres.length > 0 && (
             <div style={{ paddingTop: 20 }}>
               <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: "rgba(255,75,75,0.65)", fontWeight: 700, marginBottom: 4 }}>🎉 Genres matches</div>
-              <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 20, marginBottom: 4 }}><span style={{ color: "#FF4D4D" }}>{matchedGenres.length} genre{matchedGenres.length > 1 ? "s" : ""}</span> en commun</div>
+              <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 20, marginBottom: 4 }}><span style={{ color: T.accent }}>{matchedGenres.length} genre{matchedGenres.length > 1 ? "s" : ""}</span> en commun</div>
               <div style={{ color: "rgba(255,255,255,0.33)", fontSize: 14, marginBottom: 18 }}>Choisissez pour charger les films →</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {matchedGenres.map(g => (
                   <div key={g.id} onClick={() => startMovies(g)} style={{ borderRadius: 16, padding: "16px 12px", cursor: "pointer", border: `1px solid ${g.color}28`, background: `${g.color}0c`, textAlign: "center" }}>
-                    <div style={{ fontSize: 30, marginBottom: 7 }}>{g.emoji}</div>
-                    <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 13, color: g.color }}>{g.name}</div>
+                    <div style={{ marginBottom: 7 }}><Icon name={g.icon} size={34} /></div>
+                    <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 13, color: g.color }}>{g.name}</div>
                   </div>
                 ))}
                 {screen !== "genrePick" && !genreDone && (
@@ -882,11 +931,11 @@ useEffect(() => {
             <div>
               <div style={{ paddingTop: 14, marginBottom: 10 }}>
                 <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: "rgba(255,75,75,0.65)", fontWeight: 700, marginBottom: 6 }}>
-                  Films · {selGenre && <span style={{ color: selGenre.color }}>{selGenre.emoji} {selGenre.name}</span>}
+                  Films · {selGenre && <span style={{ color: T.accent }}>{selGenre.name}</span>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
                   <div style={{ flex: 1, height: 2.5, background: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{ height: "100%", background: "#FF4D4D", borderRadius: 3, width: `${movies.length > 0 ? (movieIdx / movies.length) * 100 : 0}%`, transition: "width 0.3s" }} />
+                    <div style={{ height: "100%", background: T.accent, borderRadius: 3, width: `${movies.length > 0 ? (movieIdx / movies.length) * 100 : 0}%`, transition: "width 0.3s" }} />
                   </div>
                   <div style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", whiteSpace: "nowrap" }}>{movieIdx}/{movies.length}</div>
                 </div>
@@ -896,7 +945,7 @@ useEffect(() => {
                     const next = !skipSeen;
                     setSkipSeen(next);
                     if (next && cur && seenIds.has(cur.id)) advance(movieIdx, movies, next, seenIds);
-                  }} style={{ width: 38, height: 20, borderRadius: 10, background: skipSeen ? "#FF4D4D" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+                  }} style={{ width: 38, height: 20, borderRadius: 10, background: skipSeen ? T.accent : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
                     <div style={{ position: "absolute", top: 2, left: skipSeen ? 20 : 2, width: 16, height: 16, borderRadius: "50%", background: "white", transition: "left 0.2s" }} />
                   </div>
                 </div>
@@ -907,7 +956,7 @@ useEffect(() => {
                 <MovieCard key={`${selGenre?.id}-${movieIdx}`} movie={cur} onSwipe={onMovieSwipe} onDetail={() => setDetail(cur)} seenIds={seenIds} onToggleSeen={toggleSeen} wishlist={wishlist} onToggleWishlist={toggleWishlist} />
               </div>
               <div style={{ display: "flex", justifyContent: "center", gap: 22, marginBottom: 12 }}>
-                <button onClick={() => onMovieSwipe(false)} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(255,77,77,0.1)", border: "1.5px solid rgba(255,77,77,0.28)", fontSize: 24, cursor: "pointer" }}>✗</button>
+                <button onClick={() => onMovieSwipe(false)} style={{ width: 64, height: 64, borderRadius: "50%", background: T.card, border: `1.5px solid ${T.red}55`, color: T.red, fontSize: 24, cursor: "pointer" }}>✗</button>
                 <button onClick={() => onMovieSwipe(true)} style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(74,222,128,0.1)", border: "1.5px solid rgba(74,222,128,0.28)", fontSize: 24, cursor: "pointer" }}>♥</button>
               </div>
               <div style={{ textAlign: "center" }}>
@@ -920,7 +969,7 @@ useEffect(() => {
           {screen === "movie" && movieDone && !movieMatch && (
             <div style={{ textAlign: "center", paddingTop: 60 }}>
               <div style={{ fontSize: 56, marginBottom: 16 }}>🍿</div>
-              <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 22, marginBottom: 10 }}>Pas de match !</div>
+              <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 22, marginBottom: 10 }}>Pas de match !</div>
               <div style={{ color: "rgba(255,255,255,0.33)", fontSize: 14, marginBottom: 28 }}>Essayez un autre genre !</div>
               <Btn onClick={() => setScreen("genre")}>Choisir un autre genre</Btn>
               <Btn outline onClick={() => startMovies(selGenre)}>Recharger ce genre</Btn>
@@ -931,7 +980,7 @@ useEffect(() => {
           {screen === "providers" && (
             <div style={{ paddingTop: 20 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 22 }}>Mes plateformes</div>
+                <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 22 }}>Mes plateformes</div>
                 <button onClick={() => setScreen("home")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>← Retour</button>
               </div>
               <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
@@ -947,7 +996,7 @@ useEffect(() => {
                       localStorage.setItem('selectedProviders', JSON.stringify(next));
                     }} style={{ borderRadius: 14, padding: "14px 16px", cursor: "pointer", border: selected ? `2px solid ${p.color}` : "1px solid rgba(255,255,255,0.1)", background: selected ? `${p.color}22` : "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", gap: 10, transition: "all 0.15s", userSelect: "none" }}>
                       <div style={{ fontSize: 22 }}>{p.logo}</div>
-                      <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 13, color: selected ? "white" : "rgba(255,255,255,0.55)" }}>{p.name}</div>
+                      <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 13, color: selected ? "white" : "rgba(255,255,255,0.55)" }}>{p.name}</div>
                       {selected && <div style={{ marginLeft: "auto", width: 18, height: 18, borderRadius: "50%", background: p.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "white", fontWeight: 700, flexShrink: 0 }}>✓</div>}
                     </div>
                   );
@@ -969,7 +1018,7 @@ useEffect(() => {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                 <div>
                   <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: "rgba(255,75,75,0.65)", fontWeight: 700, marginBottom: 4 }}>Étape 2 · Ambiance</div>
-                  <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 20 }}>Une ambiance ce soir ?</div>
+                  <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 20 }}>Une ambiance ce soir ?</div>
                 </div>
               </div>
               <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
@@ -980,14 +1029,14 @@ useEffect(() => {
                   const sel = selectedMoods.includes(m.id);
                   return (
                     <div key={m.id} onClick={() => setSelectedMoods(prev => sel ? prev.filter(x => x !== m.id) : [...prev, m.id])}
-                      style={{ borderRadius: 12, padding: "10px 14px", cursor: "pointer", border: sel ? "2px solid #FF4D4D" : "1px solid rgba(255,255,255,0.12)", background: sel ? "rgba(255,77,77,0.12)" : "rgba(255,255,255,0.04)", transition: "all 0.15s", userSelect: "none" }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#FF4D4D" : "rgba(255,255,255,0.7)" }}>{m.label}</div>
+                      style={{ borderRadius: 12, padding: "10px 14px", cursor: "pointer", border: sel ? `1.5px solid ${T.accent}` : `1px solid ${T.borderSoft}`, background: sel ? T.accentSoft : T.card, transition: "all 0.15s", userSelect: "none" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: sel ? T.accent : T.textMid }}>{m.label}</div>
                     </div>
                   );
                 })}
               </div>
               {selectedMoods.length > 0 && (
-                <div style={{ background: "rgba(255,77,77,0.08)", border: "1px solid rgba(255,77,77,0.2)", borderRadius: 12, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "rgba(255,77,77,0.8)" }}>
+                <div style={{ background: T.accentSoft, border: `1px solid ${T.border}`, borderRadius: 12, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: T.accent }}>
                   {selectedMoods.length} filtre{selectedMoods.length > 1 ? "s" : ""} sélectionné{selectedMoods.length > 1 ? "s" : ""}
                 </div>
               )}
@@ -1002,7 +1051,7 @@ useEffect(() => {
           {screen === "wishlist" && (
             <div style={{ paddingTop: 20 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 22 }}>Ma liste</div>
+                <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 22 }}>Ma liste</div>
                 <button onClick={() => setScreen("home")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>← Retour</button>
               </div>
               {wishlist.length === 0 ? (
@@ -1025,7 +1074,7 @@ useEffect(() => {
                         <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.title}</div>
                         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{m.year}{m.imdb ? ` · ⭐ ${m.imdb}` : ""}</div>
                       </div>
-                      <button onClick={() => removeWishlist(m.id)} style={{ background: "rgba(255,77,77,0.1)", border: "1px solid rgba(255,77,77,0.3)", borderRadius: 8, padding: "6px 10px", color: "#FF4D4D", fontSize: 12, cursor: "pointer", fontFamily: "DM Sans, sans-serif", flexShrink: 0 }}>✕</button>
+                      <button onClick={() => removeWishlist(m.id)} style={{ background: `${T.red}1a`, border: `1px solid ${T.red}44`, borderRadius: 8, padding: "6px 10px", color: T.red, fontSize: 12, cursor: "pointer", fontFamily: "DM Sans, sans-serif", flexShrink: 0 }}>✕</button>
                     </div>
                   ))}
                   <div style={{ marginTop: 10 }}>
@@ -1040,7 +1089,7 @@ useEffect(() => {
           {screen === "seen" && (
             <div style={{ paddingTop: 20 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 22 }}>Mes films deja vus</div>
+                <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 22 }}>Mes films deja vus</div>
                 <button onClick={() => setScreen("home")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>← Retour</button>
               </div>
               {seenIds.size === 0 ? (
@@ -1062,12 +1111,12 @@ useEffect(() => {
                         <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.title}</div>
                         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{m.year}{m.imdb ? ` · ⭐ ${m.imdb}` : ""}</div>
                       </div>
-                      <button onClick={() => removeSeen(m.id)} style={{ background: "rgba(255,77,77,0.1)", border: "1px solid rgba(255,77,77,0.3)", borderRadius: 8, padding: "6px 10px", color: "#FF4D4D", fontSize: 12, cursor: "pointer", fontFamily: "DM Sans, sans-serif", flexShrink: 0 }}>✕</button>
+                      <button onClick={() => removeSeen(m.id)} style={{ background: `${T.red}1a`, border: `1px solid ${T.red}44`, borderRadius: 8, padding: "6px 10px", color: T.red, fontSize: 12, cursor: "pointer", fontFamily: "DM Sans, sans-serif", flexShrink: 0 }}>✕</button>
                     </div>
                   )) : [...seenIds].map(id => (
                     <div key={id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "12px 16px" }}>
                       <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)" }}>Film #{id}</div>
-                      <button onClick={() => removeSeen(id)} style={{ background: "rgba(255,77,77,0.1)", border: "1px solid rgba(255,77,77,0.3)", borderRadius: 8, padding: "5px 12px", color: "#FF4D4D", fontSize: 12, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>✕</button>
+                      <button onClick={() => removeSeen(id)} style={{ background: `${T.red}1a`, border: `1px solid ${T.red}44`, borderRadius: 8, padding: "5px 12px", color: T.red, fontSize: 12, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>✕</button>
                     </div>
                   ))}
                   <div style={{ marginTop: 10 }}>
@@ -1082,7 +1131,7 @@ useEffect(() => {
           {screen === "final" && (
             <div style={{ textAlign: "center", paddingTop: 56 }}>
               <div style={{ fontSize: 72, marginBottom: 16, animation: "float 3s ease-in-out infinite" }}>🍿</div>
-              <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 32, marginBottom: 10, letterSpacing: "-1px" }}>Bonne seance !</div>
+              <div style={{ fontFamily: T.display, fontWeight: 800, fontSize: 32, marginBottom: 10, letterSpacing: "-1px" }}>Bonne seance !</div>
               <div style={{ color: "rgba(255,255,255,0.38)", fontSize: 15, marginBottom: 34 }}>Eteignez les lumieres et profitez !</div>
               <Btn onClick={reset}>Nouvelle session</Btn>
             </div>
