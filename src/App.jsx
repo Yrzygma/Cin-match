@@ -218,7 +218,7 @@ function MovieCard({ movie, onSwipe, onDetail, seenIds, onToggleSeen }) {
           </div>
           <button onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}
             onClick={e => { e.stopPropagation(); onDetail(); }}
-            style={{ flexShrink: 0, background: "rgba(255,75,75,0.1)", border: "1px solid rgba(255,75,75,0.28)", borderRadius: 9, padding: "6px 12px", color: T.accent, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>
+            style={{ flexShrink: 0, background: T.accentSoft, border: `1px solid ${T.border}`, borderRadius: 9, padding: "6px 12px", color: T.accent, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans, sans-serif" }}>
             + Info
           </button>
         </div>
@@ -226,8 +226,9 @@ function MovieCard({ movie, onSwipe, onDetail, seenIds, onToggleSeen }) {
         {movie.streamingOn?.length > 0 && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {movie.streamingOn.map(p => (
-              <span key={p.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, padding: "3px 8px", fontSize: 11, color: "rgba(255,255,255,0.55)" }}>
-                {p.logo} {p.name}
+              <span key={p.id} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, padding: "3px 8px", fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
+                {p.logo && <img src={p.logo} alt={p.name} style={{ width: 16, height: 16, borderRadius: 4, objectFit: "cover" }} />}
+                {p.name}
               </span>
             ))}
           </div>
@@ -240,10 +241,10 @@ function MovieCard({ movie, onSwipe, onDetail, seenIds, onToggleSeen }) {
 
 function DetailPanel({ movie, onClose }) {
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#0A0A0F", overflowY: "auto" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: T.bg, overflowY: "auto" }}>
       <div style={{ position: "relative", height: 320, overflow: "hidden" }}>
         <Poster url={movie.poster} title={movie.title} style={{ position: "absolute", inset: 0, filter: "brightness(0.5)" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,rgba(0,0,0,0.1) 30%,#0A0A0F 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,rgba(0,0,0,0.1) 30%,#0A0A0B 100%)" }} />
         <button onClick={onClose} style={{ position: "absolute", top: 20, left: 20, background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 50, width: 40, height: 40, color: "#fff", fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>←</button>
         <div style={{ position: "absolute", bottom: 20, left: 20, right: 20 }}>
           <div style={{ fontFamily: T.display, fontWeight: 800, fontSize: 24, lineHeight: 1.15, marginBottom: 10 }}>{movie.title}</div>
@@ -256,11 +257,12 @@ function DetailPanel({ movie, onClose }) {
       <div style={{ padding: "20px 22px 48px" }}>
         {movie.streamingOn?.length > 0 && (
           <div style={{ marginBottom: 18 }}>
-            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: "rgba(255,75,75,0.65)", fontWeight: 700, marginBottom: 10 }}>Disponible sur</div>
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: T.accent, fontWeight: 700, marginBottom: 10 }}>Disponible sur</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {movie.streamingOn.map(p => (
-                <span key={p.id} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "6px 12px", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>
-                  {p.logo} {p.name}
+                <span key={p.id} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "6px 12px", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.75)" }}>
+                  {p.logo && <img src={p.logo} alt={p.name} style={{ width: 20, height: 20, borderRadius: 5, objectFit: "cover" }} />}
+                  {p.name}
                 </span>
               ))}
             </div>
@@ -761,7 +763,7 @@ useEffect(() => {
       `}</style>
 
       <div style={{ minHeight: "100vh", background: T.bgGrad, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <div style={{ position: "fixed", inset: 0, pointerEvents: "none", background: "radial-gradient(ellipse at 20% 20%,rgba(255,75,75,0.07) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(100,80,255,0.07) 0%,transparent 55%)" }} />
+        <div style={{ position: "fixed", inset: 0, pointerEvents: "none", background: "radial-gradient(ellipse at 20% 20%,rgba(212,175,55,0.06) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(212,175,55,0.04) 0%,transparent 55%)" }} />
 
         {/* Header */}
         <div style={{ width: "100%", maxWidth: 440, padding: "22px 20px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", zIndex: 1 }}>
@@ -788,7 +790,7 @@ useEffect(() => {
               <Btn outline onClick={() => { setScreen("genre"); }}>Mode solo</Btn>
               <div style={{ height: 4 }} />
               <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 4 }}>
-                <button onClick={() => setScreen("providers")} style={{ background: "none", border: "none", color: selectedProviders.length > 0 ? "rgba(255,75,75,0.8)" : "rgba(255,255,255,0.3)", fontSize: 13, cursor: "pointer", fontFamily: "DM Sans, sans-serif", textDecoration: "underline" }}>
+                <button onClick={() => setScreen("providers")} style={{ background: "none", border: "none", color: selectedProviders.length > 0 ? T.accent : "rgba(255,255,255,0.35)", fontSize: 13, cursor: "pointer", fontFamily: "DM Sans, sans-serif", textDecoration: "underline" }}>
                   🎬 Plateformes{selectedProviders.length > 0 ? ` (${selectedProviders.length})` : ""}
                 </button>
                 <span style={{ color: "rgba(255,255,255,0.15)" }}>·</span>
@@ -817,8 +819,8 @@ useEffect(() => {
               <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 14, marginBottom: 28 }}>Partagez ce code ou ce lien</div>
 
               {/* Big code */}
-              <div style={{ background: "rgba(255,75,75,0.1)", border: "2px solid rgba(255,75,75,0.3)", borderRadius: 18, padding: "20px 24px", marginBottom: 20 }}>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 2, color: "rgba(255,75,75,0.7)", marginBottom: 8 }}>Code de session</div>
+              <div style={{ background: T.accentSoft, border: `1px solid ${T.border}`, borderRadius: 18, padding: "20px 24px", marginBottom: 20 }}>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 2, color: T.accent, marginBottom: 8 }}>Code de session</div>
                 <div style={{ fontFamily: T.display, fontWeight: 800, fontSize: 42, letterSpacing: 8, color: T.accent }}>{sessionCode}</div>
               </div>
 
@@ -860,7 +862,7 @@ useEffect(() => {
               <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Chargement des films...</div>
               <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 14, marginBottom: 28 }}>Recherche en cours sur TMDB</div>
               <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-                {[0, 1, 2, 3, 4].map(i => <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "rgba(255,75,75,0.4)", animation: `pulse 1.2s ${i * 0.2}s ease-in-out infinite` }} />)}
+                {[0, 1, 2, 3, 4].map(i => <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: T.accent, animation: `pulse 1.2s ${i * 0.2}s ease-in-out infinite` }} />)}
               </div>
             </div>
           )}
@@ -869,7 +871,7 @@ useEffect(() => {
           {screen === "genre" && !genreDone && !genreMatch && (
             <div>
               <div style={{ paddingTop: 14, marginBottom: 14 }}>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: "rgba(255,75,75,0.65)", fontWeight: 700, marginBottom: 6 }}>Etape 1 · Genres</div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: T.accent, fontWeight: 700, marginBottom: 6 }}>Etape 1 · Genres</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ flex: 1, height: 2.5, background: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}>
                     <div style={{ height: "100%", background: T.accent, borderRadius: 3, width: `${(genreIdx / GENRES.length) * 100}%`, transition: "width 0.3s" }} />
@@ -909,7 +911,7 @@ useEffect(() => {
           {/* GENRE DONE - pick */}
 		 {screen === "genre" && genreDone && !genreMatch && matchedGenres.length > 0 && (
             <div style={{ paddingTop: 20 }}>
-              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: "rgba(255,75,75,0.65)", fontWeight: 700, marginBottom: 4 }}>🎉 Genres matches</div>
+              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: T.accent, fontWeight: 700, marginBottom: 4 }}>Genres matchés</div>
               <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 20, marginBottom: 4 }}><span style={{ color: T.accent }}>{matchedGenres.length} genre{matchedGenres.length > 1 ? "s" : ""}</span> en commun</div>
               <div style={{ color: "rgba(255,255,255,0.33)", fontSize: 14, marginBottom: 18 }}>Choisissez pour charger les films →</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -930,7 +932,7 @@ useEffect(() => {
           {screen === "movie" && !movieDone && !movieMatch && cur && (
             <div>
               <div style={{ paddingTop: 14, marginBottom: 10 }}>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: "rgba(255,75,75,0.65)", fontWeight: 700, marginBottom: 6 }}>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: T.accent, fontWeight: 700, marginBottom: 6 }}>
                   Films · {selGenre && <span style={{ color: T.accent }}>{selGenre.name}</span>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
@@ -1017,7 +1019,7 @@ useEffect(() => {
             <div style={{ paddingTop: 20 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                 <div>
-                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: "rgba(255,75,75,0.65)", fontWeight: 700, marginBottom: 4 }}>Étape 2 · Ambiance</div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: T.accent, fontWeight: 700, marginBottom: 4 }}>Étape 2 · Ambiance</div>
                   <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 20 }}>Une ambiance ce soir ?</div>
                 </div>
               </div>
