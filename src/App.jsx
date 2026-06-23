@@ -346,6 +346,19 @@ export default function CineMatch() {
   const [sessionCode, setSessionCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [selectedProviders, setSelectedProviders] = useState(() => JSON.parse(localStorage.getItem('selectedProviders') || '[]'));
+  const [providerLogos, setProviderLogos] = useState({});
+
+  useEffect(() => {
+    if (screen !== "providers" || Object.keys(providerLogos).length > 0) return;
+    fetch("/api/movies?list=providers")
+      .then((r) => r.json())
+      .then((data) => {
+        const map = {};
+        (data.providers || []).forEach((p) => { map[p.id] = p.logo; });
+        setProviderLogos(map);
+      })
+      .catch(() => {});
+  }, [screen]);
   const [selectedMoods, setSelectedMoods] = useState([]);
 
   // Genre phase
@@ -997,7 +1010,9 @@ useEffect(() => {
                       setSelectedProviders(next);
                       localStorage.setItem('selectedProviders', JSON.stringify(next));
                     }} style={{ borderRadius: 14, padding: "14px 16px", cursor: "pointer", border: selected ? `2px solid ${p.color}` : "1px solid rgba(255,255,255,0.1)", background: selected ? `${p.color}22` : "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", gap: 10, transition: "all 0.15s", userSelect: "none" }}>
-                      <div style={{ fontSize: 22 }}>{p.logo}</div>
+                      {providerLogos[p.id]
+                        ? <img src={providerLogos[p.id]} alt={p.name} style={{ width: 30, height: 30, borderRadius: 7, objectFit: "cover", flexShrink: 0 }} />
+                        : <div style={{ width: 30, height: 30, borderRadius: 7, background: `${p.color}22`, border: `1px solid ${p.color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, color: p.color, flexShrink: 0 }}>{p.name[0]}</div>}
                       <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 13, color: selected ? "white" : "rgba(255,255,255,0.55)" }}>{p.name}</div>
                       {selected && <div style={{ marginLeft: "auto", width: 18, height: 18, borderRadius: "50%", background: p.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "white", fontWeight: 700, flexShrink: 0 }}>✓</div>}
                     </div>
