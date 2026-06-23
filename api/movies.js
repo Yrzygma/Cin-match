@@ -8,14 +8,14 @@ const GENRE_MAP = {
 };
 
 const PROVIDER_INFO = {
-  8:   { name: "Netflix",      logo: "🔴" },
-  119: { name: "Amazon Prime", logo: "🔵" },
-  337: { name: "Disney+",      logo: "⭐" },
-  350: { name: "Apple TV+",    logo: "🍎" },
-  190: { name: "Canal+",       logo: "⬛" },
-  56:  { name: "OCS",          logo: "🟠" },
-  531: { name: "Paramount+",   logo: "💫" },
-  29:  { name: "Free",         logo: "📺" },
+  8:   { name: "Netflix" },
+  119: { name: "Amazon Prime" },
+  337: { name: "Disney+" },
+  350: { name: "Apple TV+" },
+  190: { name: "Canal+" },
+  56:  { name: "OCS" },
+  531: { name: "Paramount+" },
+  29:  { name: "Free" },
 };
 
 // Mood filter configurations
@@ -93,7 +93,11 @@ export default async function handler(req, res) {
       const frData = providerResults[i]?.results?.FR || {};
       const flatrate = (frData.flatrate || [])
         .filter((p) => PROVIDER_INFO[p.provider_id])
-        .map((p) => ({ id: p.provider_id, name: PROVIDER_INFO[p.provider_id].name, logo: PROVIDER_INFO[p.provider_id].logo }));
+        .map((p) => ({
+          id: p.provider_id,
+          name: PROVIDER_INFO[p.provider_id].name,
+          logo: p.logo_path ? `https://image.tmdb.org/t/p/w92${p.logo_path}` : null,
+        }));
 
       // Trailer — prefer French, fallback to English
       const videos = trailerResults[i]?.results || [];
