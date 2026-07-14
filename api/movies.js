@@ -34,7 +34,28 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
 
-  const { genre, page = 1, providers, moods } = req.query;
+  const { genre, page = 1, providers, moods, list } = req.query;
+
+  // ── Mode: liste des plateformes avec les logos officiels TMDB ──
+  if (list === "providers") {
+    try {
+      const r = await fetch(`${TMDB_BASE}/watch/providers/movie?api_key=${TMDB_KEY}&watch_region=FR&language=fr-FR`);
+      const data = await r.json();
+      const wanted = Object.keys(PROVIDER_INFO).map(Number);
+      const result = (data.results || [])
+        .filter((p) => wanted.includes(p.provider_id))
+        .map((p) => ({
+          id: p.provider_id,
+          name: PROVIDER_INFO[p.provider_id].name,
+          logo: p.logo_path ? `https://image.tmdb.org/t/p/w92${p.logo_path}` : null,
+        }))
+        .sort((a, b) => wanted.indexOf(a.id) - wanted.indexOf(b.id));
+      return res.status(200).json({ providers: result });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   if (!genre || !GENRE_MAP[genre]) return res.status(400).json({ error: "Invalid genre" });
 
   // Provider filter (flatrate only)
