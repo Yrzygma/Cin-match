@@ -77,7 +77,7 @@ const PROVIDERS = [
   { id: 119, name: "Amazon Prime", color: "#00A8E0", logo: "🔵" },
   { id: 337, name: "Disney+",      color: "#113CCF", logo: "⭐" },
   { id: 350, name: "Apple TV+",    color: "#555555", logo: "🍎" },
-  { id: 190, name: "Canal+",       color: "#111111", logo: "⬛" },
+  { id: 381, name: "Canal+",       color: "#111111", logo: "⬛" },
   { id: 56,  name: "OCS",          color: "#FF6B00", logo: "🟠" },
   { id: 531, name: "Paramount+",   color: "#0064FF", logo: "💫" },
   { id: 29,  name: "Free",         color: "#CD1127", logo: "📺" },
@@ -345,7 +345,15 @@ export default function CineMatch() {
   const [partnerName, setPartnerName] = useState("");
   const [sessionCode, setSessionCode] = useState("");
   const [copied, setCopied] = useState(false);
-  const [selectedProviders, setSelectedProviders] = useState(() => JSON.parse(localStorage.getItem('selectedProviders') || '[]'));
+  const [selectedProviders, setSelectedProviders] = useState(() => {
+    const saved = JSON.parse(localStorage.getItem('selectedProviders') || '[]');
+    // Migration : Canal+ est passe de l'ID 190 a 381 (meilleur catalogue)
+    const migrated = [...new Set(saved.map((id) => (id === 190 ? 381 : id)))];
+    if (JSON.stringify(saved) !== JSON.stringify(migrated)) {
+      localStorage.setItem('selectedProviders', JSON.stringify(migrated));
+    }
+    return migrated;
+  });
   const [providerLogos, setProviderLogos] = useState({});
 
   useEffect(() => {
@@ -1162,3 +1170,4 @@ useEffect(() => {
     </>
   );
 }
+
