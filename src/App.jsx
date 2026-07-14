@@ -95,9 +95,9 @@ const COUNTRIES = [
 ];
 
 const POPULARITY_OPTIONS = [
-  { id: "mainstream", label: "Grand public", desc: "Valeurs sures, films connus" },
-  { id: "balanced",   label: "Equilibre",    desc: "Bon compromis" },
-  { id: "gems",       label: "Pepites",      desc: "Plus confidentiel" },
+  { id: "gems",       label: "Pepites",      desc: "Films confidentiels, hors des sentiers battus" },
+  { id: "balanced",   label: "Moyen",        desc: "Ni blockbuster, ni inconnu" },
+  { id: "mainstream", label: "Grand public", desc: "Valeurs sures, films tres connus" },
 ];
 
 const YEAR_MIN = 1950;
@@ -113,6 +113,7 @@ const DEFAULT_MOOD = {
   ratingMin: 0,
   countries: [],
   popularity: "balanced",
+  ratingScale10: true,
 };
 
 // Un mood est "actif" s'il differe des valeurs par defaut
@@ -158,44 +159,40 @@ function fmtDur(min) {
   return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
 }
 
-// Notation en etoiles avec demi-etoiles (0 a 5, pas de 0.5)
-function StarRating({ value, onChange }) {
+// Curseur de note minimum, sur 10 (meme echelle que les cartes de films)
+function RatingSlider({ value, onChange }) {
+  const MIN = 0;
+  const MAX = 9;
+  const pct = ((value - MIN) / (MAX - MIN)) * 100;
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-      {[1, 2, 3, 4, 5].map((s) => {
-        const full = value >= s;
-        const half = !full && value >= s - 0.5;
-        return (
-          <div key={s} style={{ position: "relative", width: 30, height: 30, cursor: "pointer" }}>
-            <div onClick={() => onChange(value === s - 0.5 ? 0 : s - 0.5)}
-              style={{ position: "absolute", left: 0, top: 0, width: "50%", height: "100%", zIndex: 2 }} />
-            <div onClick={() => onChange(value === s ? 0 : s)}
-              style={{ position: "absolute", right: 0, top: 0, width: "50%", height: "100%", zIndex: 2 }} />
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={T.borderSoft} strokeWidth="1.5"
-              style={{ position: "absolute", inset: 0 }}>
-              <path d="M12 2l3 6.5 7 .8-5 4.8 1.3 7L12 17.8 5.7 21l1.3-7-5-4.8 7-.8z" />
-            </svg>
-            {(full || half) && (
-              <svg width="30" height="30" viewBox="0 0 24 24" style={{ position: "absolute", inset: 0 }}>
-                <defs>
-                  <linearGradient id={`half-${s}`}>
-                    <stop offset="50%" stopColor={T.accent} />
-                    <stop offset="50%" stopColor="transparent" />
-                  </linearGradient>
-                </defs>
-                <path d="M12 2l3 6.5 7 .8-5 4.8 1.3 7L12 17.8 5.7 21l1.3-7-5-4.8 7-.8z"
-                  fill={full ? T.accent : `url(#half-${s})`} />
-              </svg>
-            )}
-          </div>
-        );
-      })}
-      {value > 0 && (
-        <button onClick={() => onChange(0)}
-          style={{ background: "none", border: "none", color: T.sub, fontSize: 12, cursor: "pointer", marginLeft: 6, fontFamily: T.body }}>
-          effacer
-        </button>
-      )}
+    <div>
+      <div style={{ position: "relative", height: 28 }}>
+        <style>{`
+          .rt::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: ${T.accent}; border: 2px solid ${T.bg};
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+          }
+          .rt::-moz-range-thumb {
+            width: 20px; height: 20px; border-radius: 50%;
+            background: ${T.accent}; border: 2px solid ${T.bg};
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+          }
+        `}</style>
+        <div style={{ position: "absolute", top: 12, left: 0, right: 0, height: 4, borderRadius: 2, background: T.borderSoft }} />
+        <div style={{ position: "absolute", top: 12, left: 0, height: 4, borderRadius: 2, background: T.accent, width: `${pct}%` }} />
+        <input className="rt" type="range" min={MIN} max={MAX} step={0.5} value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          style={{ position: "absolute", width: "100%", top: 0, height: 28, WebkitAppearance: "none", appearance: "none", background: "none", margin: 0 }} />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 2 }}>
+        <span style={{ fontSize: 11, color: T.sub }}>Peu importe</span>
+        <span style={{ fontSize: 11, color: T.sub }}>9 / 10</span>
+      </div>
     </div>
   );
 }
@@ -494,7 +491,15 @@ export default function CineMatch() {
   const [mood, setMood] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('mood') || 'null');
-      return saved ? { ...DEFAULT_MOOD, ...saved } : { ...DEFAULT_MOOD };
+      if (!saved) return { ...DEFAULT_MOOD };
+      const m = { ...DEFAULT_MOOD, ...saved };
+      // Migration : la note etait sur 5, elle est desormais sur 10
+      if (!saved.ratingScale10 && m.ratingMin > 0 && m.ratingMin <= 5) {
+        m.ratingMin = m.ratingMin * 2;
+      }
+      m.ratingScale10 = true;
+      localStorage.setItem('mood', JSON.stringify(m));
+      return m;
     } catch {
       return { ...DEFAULT_MOOD };
     }
@@ -1224,11 +1229,13 @@ useEffect(() => {
               <div style={{ marginBottom: 24 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
                   <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2, color: T.accent, fontWeight: 700 }}>Note minimum</div>
-                  <div style={{ fontSize: 13, color: mood.ratingMin > 0 ? T.text : T.sub, fontWeight: 600 }}>
-                    {mood.ratingMin > 0 ? `${mood.ratingMin} / 5` : "Peu importe"}
+                  <div style={{ fontSize: 13, color: mood.ratingMin > 0 ? T.text : T.sub, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+                    {mood.ratingMin > 0
+                      ? <><Icon name="star" size={14} color={T.accent} /> {mood.ratingMin.toFixed(1)} et plus</>
+                      : "Peu importe"}
                   </div>
                 </div>
-                <StarRating value={mood.ratingMin} onChange={(v) => saveMood({ ...mood, ratingMin: v })} />
+                <RatingSlider value={mood.ratingMin} onChange={(v) => saveMood({ ...mood, ratingMin: v })} />
               </div>
 
               {/* DUREE */}
@@ -1427,4 +1434,3 @@ useEffect(() => {
     </>
   );
 }
-
