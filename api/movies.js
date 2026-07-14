@@ -12,11 +12,26 @@ const PROVIDER_INFO = {
   119: { name: "Amazon Prime" },
   337: { name: "Disney+" },
   350: { name: "Apple TV+" },
-  190: { name: "Canal+" },
+  381: { name: "Canal+" },
   56:  { name: "OCS" },
   531: { name: "Paramount+" },
   29:  { name: "Free" },
 };
+
+// Certains services ont plusieurs IDs TMDB. On interroge tous les IDs
+// associes pour ne perdre aucun film, mais on n'affiche qu'une entree.
+const PROVIDER_ALIASES = {
+  381: [381, 190], // Canal+ : catalogue Canal+ (381) + myCanal (190)
+};
+
+// Etend une liste d'IDs selectionnes avec leurs alias
+function expandProviderIds(ids) {
+  const out = new Set();
+  ids.forEach((id) => {
+    (PROVIDER_ALIASES[id] || [id]).forEach((x) => out.add(x));
+  });
+  return [...out];
+}
 
 // Mood filter configurations
 const MOOD_PARAMS = {
@@ -59,8 +74,12 @@ export default async function handler(req, res) {
   if (!genre || !GENRE_MAP[genre]) return res.status(400).json({ error: "Invalid genre" });
 
   // Provider filter (flatrate only)
-  const providerParam = providers
-    ? `&with_watch_providers=${providers}&watch_region=FR&with_watch_monetization_types=flatrate`
+  const expandedProviders = providers
+    ? expandProviderIds(providers.split(",").map(Number)).join("|")
+    : null;
+
+  const providerParam = expandedProviders
+    ? `&with_watch_providers=${expandedProviders}&watch_region=FR&with_watch_monetization_types=flatrate`
     : "";
 
   // Mood filters - merge all selected moods
@@ -142,7 +161,7 @@ export default async function handler(req, res) {
 
     // Strict filter: only movies on selected platforms
     if (providers) {
-      const selectedIds = providers.split(",").map(Number);
+      const selectedIds = expandProviderIds(providers.split(",").map(Number));
       movies = movies.filter((m) => m.streamingOn.some((p) => selectedIds.includes(p.id)));
     }
 
@@ -152,3 +171,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+
