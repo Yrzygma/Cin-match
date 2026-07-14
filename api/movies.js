@@ -31,12 +31,14 @@ function expandProviderIds(ids) {
   return [...out];
 }
 
-// Popularite -> seuil de votes minimum.
-// Calibre sur des mesures reelles : un seuil trop haut vide la selection.
+// Popularite -> fourchette de votes (min, max).
+// Des fourchettes fermees rendent les 3 crans reellement exclusifs :
+// sans plafond, les blockbusters remontaient dans "Pepites" a cause du
+// tri par popularite.
 const POPULARITY_TIERS = {
-  mainstream: 500, // Grand public : valeurs sures
-  balanced:   150, // Equilibre (defaut)
-  gems:        30, // Pepites : plus confidentiel
+  gems:       { min: 30,   max: 500 },  // Pepites : confidentiel
+  balanced:   { min: 501,  max: 1000 }, // Moyen
+  mainstream: { min: 1001, max: null }, // Grand public : pas de plafond
 };
 
 // Construit les parametres TMDB a partir des reglages Mood
@@ -59,17 +61,19 @@ function buildMoodParams(mood) {
   if (m.runtimeMin) parts.push(`&with_runtime.gte=${m.runtimeMin}`);
   if (m.runtimeMax) parts.push(`&with_runtime.lte=${m.runtimeMax}`);
 
-  // Note minimum (etoiles /5 -> note TMDB /10)
-  if (m.ratingMin) parts.push(`&vote_average.gte=${m.ratingMin * 2}`);
+  // Note minimum (deja sur 10, meme echelle que l'affichage des cartes)
+  if (m.ratingMin) parts.push(`&vote_average.gte=${m.ratingMin}`);
 
   // Pays d'origine (multi-selection, OR)
   if (Array.isArray(m.countries) && m.countries.length > 0) {
     parts.push(`&with_origin_country=${m.countries.join("|")}`);
   }
 
-  // Popularite -> seuil de votes. Garantit que les notes sont credibles.
-  const minVotes = POPULARITY_TIERS[m.popularity] ?? POPULARITY_TIERS.balanced;
-  parts.push(`&vote_count.gte=${minVotes}`);
+  // Popularite -> fourchette de votes. Le plancher garantit des notes
+  // credibles, le plafond ecarte les blockbusters des crans bas.
+  const tier = POPULARITY_TIERS[m.popularity] ?? POPULARITY_TIERS.balanced;
+  parts.push(`&vote_count.gte=${tier.min}`);
+  if (tier.max) parts.push(`&vote_count.lte=${tier.max}`);
 
   return parts.join("");
 }
