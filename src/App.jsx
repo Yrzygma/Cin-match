@@ -73,29 +73,63 @@ const GENRES = [
 
 // ─── STREAMING PROVIDERS ──────────────────────────────────────────────────────
 const PROVIDERS = [
-  { id: 8,   name: "Netflix",      color: "#E50914", logo: "🔴" },
-  { id: 119, name: "Amazon Prime", color: "#00A8E0", logo: "🔵" },
-  { id: 337, name: "Disney+",      color: "#113CCF", logo: "⭐" },
-  { id: 350, name: "Apple TV+",    color: "#555555", logo: "🍎" },
-  { id: 381, name: "Canal+",       color: "#111111", logo: "⬛" },
-  { id: 56,  name: "OCS",          color: "#FF6B00", logo: "🟠" },
-  { id: 531, name: "Paramount+",   color: "#0064FF", logo: "💫" },
-  { id: 29,  name: "Free",         color: "#CD1127", logo: "📺" },
+  { id: 8,   name: "Netflix",      color: "#E50914" },
+  { id: 119, name: "Amazon Prime", color: "#00A8E0" },
+  { id: 337, name: "Disney+",      color: "#113CCF" },
+  { id: 350, name: "Apple TV+",    color: "#888888" },
+  { id: 381, name: "Canal+",       color: "#C4C4C4" },
+  { id: 531, name: "Paramount+",   color: "#0064FF" },
 ];
+
+// ─── MOOD : criteres de recherche ─────────────────────────────────────────────
+const COUNTRIES = [
+  { code: "FR", name: "France" },
+  { code: "US", name: "Etats-Unis" },
+  { code: "GB", name: "Royaume-Uni" },
+  { code: "KR", name: "Coree du Sud" },
+  { code: "JP", name: "Japon" },
+  { code: "IT", name: "Italie" },
+  { code: "ES", name: "Espagne" },
+  { code: "DE", name: "Allemagne" },
+  { code: "IN", name: "Inde" },
+];
+
+const POPULARITY_OPTIONS = [
+  { id: "mainstream", label: "Grand public", desc: "Valeurs sures, films connus" },
+  { id: "balanced",   label: "Equilibre",    desc: "Bon compromis" },
+  { id: "gems",       label: "Pepites",      desc: "Plus confidentiel" },
+];
+
+const YEAR_MIN = 1950;
+const YEAR_MAX = new Date().getFullYear();
+const RUNTIME_MIN = 60;
+const RUNTIME_MAX = 240;
+
+const DEFAULT_MOOD = {
+  yearMin: YEAR_MIN,
+  yearMax: YEAR_MAX,
+  runtimeMin: RUNTIME_MIN,
+  runtimeMax: RUNTIME_MAX,
+  ratingMin: 0,
+  countries: [],
+  popularity: "balanced",
+};
+
+// Un mood est "actif" s'il differe des valeurs par defaut
+function isMoodActive(m) {
+  return (
+    m.yearMin !== YEAR_MIN ||
+    m.yearMax !== YEAR_MAX ||
+    m.runtimeMin !== RUNTIME_MIN ||
+    m.runtimeMax !== RUNTIME_MAX ||
+    m.ratingMin > 0 ||
+    m.countries.length > 0 ||
+    m.popularity !== "balanced"
+  );
+}
 
 
 // ─── MOOD FILTERS ─────────────────────────────────────────────────────────────
-const MOODS = [
-  { id:"feelgood",  label:"😂 Feel-good",         runtime_lte:null, keywords:"feel-good",        release_gte:null, release_lte:null },
-  { id:"thrills",   label:"😱 Frissons",           runtime_lte:null, keywords:null,               release_gte:null, release_lte:null },
-  { id:"thinking",  label:"🤔 Qui fait réfléchir", runtime_lte:null, keywords:"thought-provoking",release_gte:null, release_lte:null },
-  { id:"emotional", label:"😢 Émouvant",           runtime_lte:null, keywords:"tearjerker",       release_gte:null, release_lte:null },
-  { id:"short",     label:"⏱ Court (- 1h30)",      runtime_lte:90,   keywords:null,               release_gte:null, release_lte:null },
-  { id:"long",      label:"🎬 Long (+ 2h)",         runtime_lte:null, keywords:null,               release_gte:null, release_lte:null },
-  { id:"recent",    label:"📅 Récent (2020+)",      runtime_lte:null, keywords:null,               release_gte:"2020-01-01", release_lte:null },
-  { id:"classic",   label:"🏛 Classique (- 2005)",  runtime_lte:null, keywords:null,               release_gte:null, release_lte:"2005-12-31" },
-];
-
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function generateCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -105,16 +139,106 @@ function generateUserId() {
   return Math.random().toString(36).substring(2, 12);
 }
 
-async function fetchMovies(genreId, providers = [], moods = []) {
+async function fetchMovies(genreId, providers = [], mood = null) {
   const page = Math.floor(Math.random() * 5) + 1;
   const providerParam = providers.length > 0 ? `&providers=${providers.join(',')}` : '';
-  const moodParam = moods.length > 0 ? `&moods=${moods.join(',')}` : '';
+  const moodParam = mood ? `&mood=${encodeURIComponent(JSON.stringify(mood))}` : '';
   const res = await fetch(`/api/movies?genre=${genreId}&page=${page}${providerParam}${moodParam}`);
   const data = await res.json();
-  return data.movies || [];
+  // { movies: [...], empty?: { reason, availableElsewhere } }
+  return { movies: data.movies || [], empty: data.empty || null };
 }
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
+
+// Formate une duree en minutes -> "1h35"
+function fmtDur(min) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
+}
+
+// Notation en etoiles avec demi-etoiles (0 a 5, pas de 0.5)
+function StarRating({ value, onChange }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      {[1, 2, 3, 4, 5].map((s) => {
+        const full = value >= s;
+        const half = !full && value >= s - 0.5;
+        return (
+          <div key={s} style={{ position: "relative", width: 30, height: 30, cursor: "pointer" }}>
+            <div onClick={() => onChange(value === s - 0.5 ? 0 : s - 0.5)}
+              style={{ position: "absolute", left: 0, top: 0, width: "50%", height: "100%", zIndex: 2 }} />
+            <div onClick={() => onChange(value === s ? 0 : s)}
+              style={{ position: "absolute", right: 0, top: 0, width: "50%", height: "100%", zIndex: 2 }} />
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={T.borderSoft} strokeWidth="1.5"
+              style={{ position: "absolute", inset: 0 }}>
+              <path d="M12 2l3 6.5 7 .8-5 4.8 1.3 7L12 17.8 5.7 21l1.3-7-5-4.8 7-.8z" />
+            </svg>
+            {(full || half) && (
+              <svg width="30" height="30" viewBox="0 0 24 24" style={{ position: "absolute", inset: 0 }}>
+                <defs>
+                  <linearGradient id={`half-${s}`}>
+                    <stop offset="50%" stopColor={T.accent} />
+                    <stop offset="50%" stopColor="transparent" />
+                  </linearGradient>
+                </defs>
+                <path d="M12 2l3 6.5 7 .8-5 4.8 1.3 7L12 17.8 5.7 21l1.3-7-5-4.8 7-.8z"
+                  fill={full ? T.accent : `url(#half-${s})`} />
+              </svg>
+            )}
+          </div>
+        );
+      })}
+      {value > 0 && (
+        <button onClick={() => onChange(0)}
+          style={{ background: "none", border: "none", color: T.sub, fontSize: 12, cursor: "pointer", marginLeft: 6, fontFamily: T.body }}>
+          effacer
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Double curseur min/max
+function RangeSlider({ min, max, step, valueMin, valueMax, onChange }) {
+  const pct = (v) => ((v - min) / (max - min)) * 100;
+  const setLo = (v) => onChange(Math.min(v, valueMax - step), valueMax);
+  const setHi = (v) => onChange(valueMin, Math.max(v, valueMin + step));
+
+  const thumbStyle = {
+    position: "absolute", width: "100%", top: 0, height: 28,
+    WebkitAppearance: "none", appearance: "none",
+    background: "none", pointerEvents: "none", margin: 0,
+  };
+
+  return (
+    <div style={{ position: "relative", height: 28 }}>
+      <style>{`
+        .rs::-webkit-slider-thumb {
+          -webkit-appearance: none; appearance: none;
+          width: 20px; height: 20px; border-radius: 50%;
+          background: ${T.accent}; border: 2px solid ${T.bg};
+          cursor: pointer; pointer-events: auto;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+        .rs::-moz-range-thumb {
+          width: 20px; height: 20px; border-radius: 50%;
+          background: ${T.accent}; border: 2px solid ${T.bg};
+          cursor: pointer; pointer-events: auto;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+      `}</style>
+      <div style={{ position: "absolute", top: 12, left: 0, right: 0, height: 4, borderRadius: 2, background: T.borderSoft }} />
+      <div style={{ position: "absolute", top: 12, height: 4, borderRadius: 2, background: T.accent,
+        left: `${pct(valueMin)}%`, right: `${100 - pct(valueMax)}%` }} />
+      <input className="rs" type="range" min={min} max={max} step={step} value={valueMin}
+        onChange={(e) => setLo(Number(e.target.value))} style={thumbStyle} />
+      <input className="rs" type="range" min={min} max={max} step={step} value={valueMax}
+        onChange={(e) => setHi(Number(e.target.value))} style={thumbStyle} />
+    </div>
+  );
+}
 
 function RatingBadge({ score }) {
   if (!score) return null;
@@ -367,7 +491,20 @@ export default function CineMatch() {
       })
       .catch(() => {});
   }, [screen]);
-  const [selectedMoods, setSelectedMoods] = useState([]);
+  const [mood, setMood] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('mood') || 'null');
+      return saved ? { ...DEFAULT_MOOD, ...saved } : { ...DEFAULT_MOOD };
+    } catch {
+      return { ...DEFAULT_MOOD };
+    }
+  });
+  const [emptyInfo, setEmptyInfo] = useState(null);
+
+  const saveMood = (next) => {
+    setMood(next);
+    localStorage.setItem('mood', JSON.stringify(next));
+  };
 
   // Genre phase
   const [genreIdx, setGenreIdx] = useState(0);
@@ -647,31 +784,52 @@ export default function CineMatch() {
     });
   };
 
-  const startMoviesWithMoods = async (g, moods) => {
+
+  const startMovies = async (g) => {
     selGenreRef.current = g;
     setSelGenre(g);
     setLoading(true);
+    setEmptyInfo(null);
     setScreen("loading");
     try {
-      let movieList;
+      let movieList = [];
+      let empty = null;
+
       if (!isSolo) {
         const { data } = await supabase
           .from("sessions")
           .select("movie_list, genre_id")
           .eq("id", sessionId)
           .single();
+
         if (data?.movie_list && data?.genre_id === g.id) {
+          // La liste est deja generee : les deux swipent la meme
           movieList = JSON.parse(data.movie_list);
         } else {
-          movieList = await fetchMovies(g.id, selectedProviders, moods);
-          await supabase.from("sessions").update({
-            genre_id: g.id,
-            movie_list: JSON.stringify(movieList),
-          }).eq("id", sessionId);
+          // Premier arrive : ses reglages Mood s'appliquent aux deux
+          const r = await fetchMovies(g.id, selectedProviders, mood);
+          movieList = r.movies;
+          empty = r.empty;
+          if (movieList.length > 0) {
+            await supabase.from("sessions").update({
+              genre_id: g.id,
+              movie_list: JSON.stringify(movieList),
+            }).eq("id", sessionId);
+          }
         }
       } else {
-        movieList = await fetchMovies(g.id, selectedProviders, moods);
+        const r = await fetchMovies(g.id, selectedProviders, mood);
+        movieList = r.movies;
+        empty = r.empty;
       }
+
+      if (movieList.length === 0) {
+        setEmptyInfo(empty || { reason: "criteria" });
+        setScreen("empty");
+        setLoading(false);
+        return;
+      }
+
       setMovies(movieList);
       let startIdx = 0;
       if (skipSeen) {
@@ -683,20 +841,13 @@ export default function CineMatch() {
       setGenreMatchQueue([]);
       setGenreMatch(null);
       setScreen("movie");
-    } catch(e) {
+    } catch (e) {
       console.error("startMovies error:", e);
       setScreen("genre");
     }
     setLoading(false);
   };
 
-  const startMovies = async (g) => {
-    selGenreRef.current = g;
-    setSelGenre(g);
-    setScreen("mood");
-  };
-
-  // startMoviesDirect is now startMoviesWithMoods above
   
   const toggleWishlist = (movie) => {
     setWishlist(prev => {
@@ -811,11 +962,19 @@ useEffect(() => {
               <Btn outline onClick={() => { setScreen("genre"); }}>Mode solo</Btn>
               <div style={{ height: 4 }} />
               <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 4 }}>
-                <button onClick={() => setScreen("providers")} style={{ background: "none", border: "none", color: selectedProviders.length > 0 ? T.accent : "rgba(255,255,255,0.35)", fontSize: 13, cursor: "pointer", fontFamily: "DM Sans, sans-serif", textDecoration: "underline" }}>
-                  🎬 Plateformes{selectedProviders.length > 0 ? ` (${selectedProviders.length})` : ""}
+                <button onClick={() => setScreen("mood")} style={{ background: "none", border: "none", color: isMoodActive(mood) ? T.accent : "rgba(255,255,255,0.35)", fontSize: 13, cursor: "pointer", fontFamily: T.body, textDecoration: "underline" }}>
+                  Mood{isMoodActive(mood) ? " •" : ""}
                 </button>
                 <span style={{ color: "rgba(255,255,255,0.15)" }}>·</span>
-                <button onClick={() => setScreen("seen")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 13, cursor: "pointer", fontFamily: "DM Sans, sans-serif", textDecoration: "underline" }}>
+                <button onClick={() => setScreen("providers")} style={{ background: "none", border: "none", color: selectedProviders.length > 0 ? T.accent : "rgba(255,255,255,0.35)", fontSize: 13, cursor: "pointer", fontFamily: T.body, textDecoration: "underline" }}>
+                  Plateformes{selectedProviders.length > 0 ? ` (${selectedProviders.length})` : ""}
+                </button>
+                <span style={{ color: "rgba(255,255,255,0.15)" }}>·</span>
+                <button onClick={() => setScreen("wishlist")} style={{ background: "none", border: "none", color: wishlist.length > 0 ? T.accent : "rgba(255,255,255,0.35)", fontSize: 13, cursor: "pointer", fontFamily: T.body, textDecoration: "underline" }}>
+                  Ma liste{wishlist.length > 0 ? ` (${wishlist.length})` : ""}
+                </button>
+                <span style={{ color: "rgba(255,255,255,0.15)" }}>·</span>
+                <button onClick={() => setScreen("seen")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 13, cursor: "pointer", fontFamily: T.body, textDecoration: "underline" }}>
                   Deja vus{seenIds.size > 0 ? ` (${seenIds.size})` : ""}
                 </button>
               </div>
@@ -1039,36 +1198,134 @@ useEffect(() => {
 
           {/* MOOD FILTERS */}
           {screen === "mood" && (
-            <div style={{ paddingTop: 20 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                <div>
-                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2.5, color: T.accent, fontWeight: 700, marginBottom: 4 }}>Étape 2 · Ambiance</div>
-                  <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 20 }}>Une ambiance ce soir ?</div>
+            <div style={{ paddingTop: 20, paddingBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 22 }}>Mood</div>
+                <button onClick={() => setScreen("home")} style={{ background: "none", border: "none", color: T.sub, fontSize: 13, cursor: "pointer", fontFamily: T.body }}>← Retour</button>
+              </div>
+              <div style={{ color: T.sub, fontSize: 13, marginBottom: 22, lineHeight: 1.6 }}>
+                Affinez le type de films proposes. Ces reglages s'appliquent a vos prochaines sessions.
+              </div>
+
+              {/* ANNEE */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2, color: T.accent, fontWeight: 700 }}>Annee de sortie</div>
+                  <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{mood.yearMin} — {mood.yearMax}</div>
+                </div>
+                <RangeSlider
+                  min={YEAR_MIN} max={YEAR_MAX} step={1}
+                  valueMin={mood.yearMin} valueMax={mood.yearMax}
+                  onChange={(lo, hi) => saveMood({ ...mood, yearMin: lo, yearMax: hi })}
+                />
+              </div>
+
+              {/* NOTE MINIMUM */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2, color: T.accent, fontWeight: 700 }}>Note minimum</div>
+                  <div style={{ fontSize: 13, color: mood.ratingMin > 0 ? T.text : T.sub, fontWeight: 600 }}>
+                    {mood.ratingMin > 0 ? `${mood.ratingMin} / 5` : "Peu importe"}
+                  </div>
+                </div>
+                <StarRating value={mood.ratingMin} onChange={(v) => saveMood({ ...mood, ratingMin: v })} />
+              </div>
+
+              {/* DUREE */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2, color: T.accent, fontWeight: 700 }}>Duree</div>
+                  <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{fmtDur(mood.runtimeMin)} — {fmtDur(mood.runtimeMax)}</div>
+                </div>
+                <RangeSlider
+                  min={RUNTIME_MIN} max={RUNTIME_MAX} step={5}
+                  valueMin={mood.runtimeMin} valueMax={mood.runtimeMax}
+                  onChange={(lo, hi) => saveMood({ ...mood, runtimeMin: lo, runtimeMax: hi })}
+                />
+              </div>
+
+              {/* PAYS */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2, color: T.accent, fontWeight: 700 }}>Pays d'origine</div>
+                  <div style={{ fontSize: 12, color: T.sub }}>{mood.countries.length === 0 ? "Tous" : `${mood.countries.length} selectionne${mood.countries.length > 1 ? "s" : ""}`}</div>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                  {COUNTRIES.map(co => {
+                    const sel = mood.countries.includes(co.code);
+                    return (
+                      <div key={co.code}
+                        onClick={() => saveMood({
+                          ...mood,
+                          countries: sel ? mood.countries.filter(x => x !== co.code) : [...mood.countries, co.code],
+                        })}
+                        style={{ borderRadius: 10, padding: "8px 13px", cursor: "pointer", userSelect: "none",
+                          border: sel ? `1.5px solid ${T.accent}` : `1px solid ${T.borderSoft}`,
+                          background: sel ? T.accentSoft : T.card,
+                          fontSize: 12.5, fontWeight: 600, color: sel ? T.accent : T.textMid, transition: "all 0.15s" }}>
+                        {co.name}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-              <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
-                Optionnel — rien = tous les films du genre.
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
-                {MOODS.map(m => {
-                  const sel = selectedMoods.includes(m.id);
-                  return (
-                    <div key={m.id} onClick={() => setSelectedMoods(prev => sel ? prev.filter(x => x !== m.id) : [...prev, m.id])}
-                      style={{ borderRadius: 12, padding: "10px 14px", cursor: "pointer", border: sel ? `1.5px solid ${T.accent}` : `1px solid ${T.borderSoft}`, background: sel ? T.accentSoft : T.card, transition: "all 0.15s", userSelect: "none" }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: sel ? T.accent : T.textMid }}>{m.label}</div>
-                    </div>
-                  );
-                })}
-              </div>
-              {selectedMoods.length > 0 && (
-                <div style={{ background: T.accentSoft, border: `1px solid ${T.border}`, borderRadius: 12, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: T.accent }}>
-                  {selectedMoods.length} filtre{selectedMoods.length > 1 ? "s" : ""} sélectionné{selectedMoods.length > 1 ? "s" : ""}
+
+              {/* POPULARITE */}
+              <div style={{ marginBottom: 26 }}>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2, color: T.accent, fontWeight: 700, marginBottom: 10 }}>Popularite</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {POPULARITY_OPTIONS.map(op => {
+                    const sel = mood.popularity === op.id;
+                    return (
+                      <div key={op.id} onClick={() => saveMood({ ...mood, popularity: op.id })}
+                        style={{ borderRadius: 12, padding: "12px 14px", cursor: "pointer", userSelect: "none",
+                          border: sel ? `1.5px solid ${T.accent}` : `1px solid ${T.borderSoft}`,
+                          background: sel ? T.accentSoft : T.card,
+                          display: "flex", alignItems: "center", gap: 11, transition: "all 0.15s" }}>
+                        <div style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
+                          border: `1.5px solid ${sel ? T.accent : T.borderSoft}`,
+                          display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {sel && <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.accent }} />}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: sel ? T.accent : T.text }}>{op.label}</div>
+                          <div style={{ fontSize: 11.5, color: T.sub, marginTop: 1 }}>{op.desc}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
+              </div>
+
+              <Btn onClick={() => setScreen("home")}>Valider</Btn>
+              {isMoodActive(mood) && (
+                <button onClick={() => saveMood({ ...DEFAULT_MOOD })}
+                  style={{ background: "none", border: "none", color: T.sub, fontSize: 13, cursor: "pointer", fontFamily: T.body, textDecoration: "underline", width: "100%", textAlign: "center", marginTop: 4 }}>
+                  Reinitialiser les criteres
+                </button>
               )}
-              <Btn onClick={() => startMoviesWithMoods(selGenreRef.current, selectedMoods)}>
-                {selectedMoods.length > 0 ? `Lancer avec ${selectedMoods.length} filtre${selectedMoods.length > 1 ? "s" : ""}` : "Lancer sans filtre →"}
-              </Btn>
-              <Btn outline onClick={() => startMoviesWithMoods(selGenreRef.current, [])}>Passer cette étape</Btn>
+            </div>
+          )}
+
+          {/* AUCUN FILM TROUVE */}
+          {screen === "empty" && (
+            <div style={{ paddingTop: 60, textAlign: "center" }}>
+              <div style={{ marginBottom: 20, display: "flex", justifyContent: "center" }}>
+                <Icon name="clap" size={56} color={T.sub} />
+              </div>
+              <div style={{ fontFamily: T.display, fontWeight: 700, fontSize: 21, marginBottom: 12 }}>
+                Aucun film ne correspond
+              </div>
+              <div style={{ color: T.sub, fontSize: 14, lineHeight: 1.7, marginBottom: 28, padding: "0 10px" }}>
+                {emptyInfo?.reason === "platform"
+                  ? <>Des films correspondent a vos criteres, mais aucun n'est disponible sur {selectedProviders.length > 1 ? "vos plateformes" : "votre plateforme"}.<br/>Ajoutez une plateforme ou assouplissez vos criteres.</>
+                  : <>Vos criteres Mood sont trop restrictifs pour ce genre.<br/>Essayez d'elargir l'annee, la duree ou la note minimum.</>}
+              </div>
+              {emptyInfo?.reason === "platform" && (
+                <Btn onClick={() => setScreen("providers")}>Modifier mes plateformes</Btn>
+              )}
+              <Btn outline={emptyInfo?.reason === "platform"} onClick={() => setScreen("mood")}>Ajuster le Mood</Btn>
+              <Btn outline onClick={() => setScreen("genre")}>Choisir un autre genre</Btn>
             </div>
           )}
 
