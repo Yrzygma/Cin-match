@@ -7,15 +7,14 @@ const GENRE_MAP = {
   adventure: 12, documentary: 99,
 };
 
+// Plateformes proposees (Free et OCS retires)
 const PROVIDER_INFO = {
   8:   { name: "Netflix" },
   119: { name: "Amazon Prime" },
   337: { name: "Disney+" },
   350: { name: "Apple TV+" },
   381: { name: "Canal+" },
-  56:  { name: "OCS" },
   531: { name: "Paramount+" },
-  29:  { name: "Free" },
 };
 
 // Certains services ont plusieurs IDs TMDB. On interroge tous les IDs
@@ -24,7 +23,6 @@ const PROVIDER_ALIASES = {
   381: [381, 190], // Canal+ : catalogue Canal+ (381) + myCanal (190)
 };
 
-// Etend une liste d'IDs selectionnes avec leurs alias
 function expandProviderIds(ids) {
   const out = new Set();
   ids.forEach((id) => {
@@ -33,25 +31,56 @@ function expandProviderIds(ids) {
   return [...out];
 }
 
-// Mood filter configurations
-const MOOD_PARAMS = {
-  feelgood:  { keywords: "10749",   runtime_lte: null, runtime_gte: null, release_gte: null, release_lte: null },
-  thrills:   { keywords: null,      runtime_lte: null, runtime_gte: null, release_gte: null, release_lte: null },
-  thinking:  { keywords: "10181",   runtime_lte: null, runtime_gte: null, release_gte: null, release_lte: null },
-  emotional: { keywords: "9717",    runtime_lte: null, runtime_gte: null, release_gte: null, release_lte: null },
-  short:     { keywords: null,      runtime_lte: 90,   runtime_gte: null, release_gte: null, release_lte: null },
-  long:      { keywords: null,      runtime_lte: null, runtime_gte: 120,  release_gte: null, release_lte: null },
-  recent:    { keywords: null,      runtime_lte: null, runtime_gte: null, release_gte: "2020-01-01", release_lte: null },
-  classic:   { keywords: null,      runtime_lte: null, runtime_gte: null, release_gte: null, release_lte: "2005-12-31" },
+// Popularite -> seuil de votes minimum.
+// Calibre sur des mesures reelles : un seuil trop haut vide la selection.
+const POPULARITY_TIERS = {
+  mainstream: 500, // Grand public : valeurs sures
+  balanced:   150, // Equilibre (defaut)
+  gems:        30, // Pepites : plus confidentiel
 };
+
+// Construit les parametres TMDB a partir des reglages Mood
+function buildMoodParams(mood) {
+  if (!mood) return "";
+  let m;
+  try {
+    m = typeof mood === "string" ? JSON.parse(mood) : mood;
+  } catch {
+    return "";
+  }
+
+  const parts = [];
+
+  // Annee min / max
+  if (m.yearMin) parts.push(`&primary_release_date.gte=${m.yearMin}-01-01`);
+  if (m.yearMax) parts.push(`&primary_release_date.lte=${m.yearMax}-12-31`);
+
+  // Duree min / max (minutes)
+  if (m.runtimeMin) parts.push(`&with_runtime.gte=${m.runtimeMin}`);
+  if (m.runtimeMax) parts.push(`&with_runtime.lte=${m.runtimeMax}`);
+
+  // Note minimum (etoiles /5 -> note TMDB /10)
+  if (m.ratingMin) parts.push(`&vote_average.gte=${m.ratingMin * 2}`);
+
+  // Pays d'origine (multi-selection, OR)
+  if (Array.isArray(m.countries) && m.countries.length > 0) {
+    parts.push(`&with_origin_country=${m.countries.join("|")}`);
+  }
+
+  // Popularite -> seuil de votes. Garantit que les notes sont credibles.
+  const minVotes = POPULARITY_TIERS[m.popularity] ?? POPULARITY_TIERS.balanced;
+  parts.push(`&vote_count.gte=${minVotes}`);
+
+  return parts.join("");
+}
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
 
-  const { genre, page = 1, providers, moods, list } = req.query;
+  const { genre, page = 1, providers, mood, list } = req.query;
 
-  // ── Mode: liste des plateformes avec les logos officiels TMDB ──
+  // ── Mode : liste des plateformes avec les logos officiels TMDB ──
   if (list === "providers") {
     try {
       const r = await fetch(`${TMDB_BASE}/watch/providers/movie?api_key=${TMDB_KEY}&watch_region=FR&language=fr-FR`);
@@ -73,7 +102,8 @@ export default async function handler(req, res) {
 
   if (!genre || !GENRE_MAP[genre]) return res.status(400).json({ error: "Invalid genre" });
 
-  // Provider filter (flatrate only)
+  const moodParam = buildMoodParams(mood);
+
   const expandedProviders = providers
     ? expandProviderIds(providers.split(",").map(Number)).join("|")
     : null;
@@ -82,41 +112,44 @@ export default async function handler(req, res) {
     ? `&with_watch_providers=${expandedProviders}&watch_region=FR&with_watch_monetization_types=flatrate`
     : "";
 
-  // Mood filters - merge all selected moods
-  let runtimeLte = null, runtimeGte = null, releaseDateGte = null, releaseDateLte = null;
-  const moodList = moods ? moods.split(",") : [];
-  for (const mood of moodList) {
-    const cfg = MOOD_PARAMS[mood];
-    if (!cfg) continue;
-    if (cfg.runtime_lte !== null) runtimeLte = runtimeLte ? Math.min(runtimeLte, cfg.runtime_lte) : cfg.runtime_lte;
-    if (cfg.runtime_gte !== null) runtimeGte = runtimeGte ? Math.max(runtimeGte, cfg.runtime_gte) : cfg.runtime_gte;
-    if (cfg.release_gte) releaseDateGte = cfg.release_gte;
-    if (cfg.release_lte) releaseDateLte = cfg.release_lte;
-  }
-
-  const moodParam = [
-    runtimeLte ? `&with_runtime.lte=${runtimeLte}` : "",
-    runtimeGte ? `&with_runtime.gte=${runtimeGte}` : "",
-    releaseDateGte ? `&primary_release_date.gte=${releaseDateGte}` : "",
-    releaseDateLte ? `&primary_release_date.lte=${releaseDateLte}` : "",
-  ].join("");
+  const baseQuery = `${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&with_genres=${GENRE_MAP[genre]}&sort_by=popularity.desc&language=fr-FR${moodParam}`;
 
   try {
     const pageNums = providers ? [1, 2, 3, 4, 5] : [1, 2, 3];
     const pages = await Promise.all(
       pageNums.map((p) =>
-        fetch(`${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&with_genres=${GENRE_MAP[genre]}&sort_by=popularity.desc&vote_count.gte=100&language=fr-FR${providerParam}${moodParam}&page=${Number(page) + p - 1}`)
-          .then((r) => r.json())
+        fetch(`${baseQuery}${providerParam}&page=${Number(page) + p - 1}`).then((r) => r.json())
       )
     );
 
     const rawMovies = pages
       .flatMap((p) => p.results || [])
       .filter((m) => m.poster_path)
-      .filter((m, i, arr) => arr.findIndex(x => x.id === m.id) === i)
+      .filter((m, i, arr) => arr.findIndex((x) => x.id === m.id) === i)
       .slice(0, 40);
 
-    // Fetch providers + trailers in parallel
+    // ── Aucun film : on diagnostique la cause pour un message utile ──
+    if (rawMovies.length === 0) {
+      let reason = "criteria"; // les criteres Mood sont trop stricts
+      if (providers) {
+        // Les memes criteres, mais sans le filtre plateforme
+        try {
+          const r = await fetch(`${baseQuery}&page=1`);
+          const d = await r.json();
+          if ((d.total_results || 0) > 0) {
+            // Des films existent : c'est la plateforme qui bloque
+            reason = "platform";
+            return res.status(200).json({
+              movies: [],
+              empty: { reason, availableElsewhere: d.total_results },
+            });
+          }
+        } catch {}
+      }
+      return res.status(200).json({ movies: [], empty: { reason } });
+    }
+
+    // Providers + bandes-annonces en parallele
     const [providerResults, trailerResults] = await Promise.all([
       Promise.all(rawMovies.map((m) =>
         fetch(`${TMDB_BASE}/movie/${m.id}/watch/providers?api_key=${TMDB_KEY}`)
@@ -129,22 +162,31 @@ export default async function handler(req, res) {
     ]);
 
     let movies = rawMovies.map((m, i) => {
-      // Providers
       const frData = providerResults[i]?.results?.FR || {};
       const flatrate = (frData.flatrate || [])
-        .filter((p) => PROVIDER_INFO[p.provider_id])
-        .map((p) => ({
-          id: p.provider_id,
-          name: PROVIDER_INFO[p.provider_id].name,
-          logo: p.logo_path ? `https://image.tmdb.org/t/p/w92${p.logo_path}` : null,
-        }));
+        .filter((p) => PROVIDER_INFO[p.provider_id] || PROVIDER_ALIASES[381]?.includes(p.provider_id))
+        .map((p) => {
+          // Un alias (ex: myCanal 190) s'affiche sous le nom principal (Canal+)
+          const mainId = Object.keys(PROVIDER_ALIASES)
+            .map(Number)
+            .find((k) => PROVIDER_ALIASES[k].includes(p.provider_id)) || p.provider_id;
+          const info = PROVIDER_INFO[mainId];
+          if (!info) return null;
+          return {
+            id: mainId,
+            name: info.name,
+            logo: p.logo_path ? `https://image.tmdb.org/t/p/w92${p.logo_path}` : null,
+          };
+        })
+        .filter(Boolean)
+        // Dedoublonner (Canal+ et myCanal ne doivent pas apparaitre deux fois)
+        .filter((p, i, arr) => arr.findIndex((x) => x.id === p.id) === i);
 
-      // Trailer — prefer French, fallback to English
       const videos = trailerResults[i]?.results || [];
       const trailer =
-        videos.find(v => v.type === "Trailer" && v.site === "YouTube" && v.iso_639_1 === "fr") ||
-        videos.find(v => v.type === "Trailer" && v.site === "YouTube") ||
-        videos.find(v => v.site === "YouTube");
+        videos.find((v) => v.type === "Trailer" && v.site === "YouTube" && v.iso_639_1 === "fr") ||
+        videos.find((v) => v.type === "Trailer" && v.site === "YouTube") ||
+        videos.find((v) => v.site === "YouTube");
 
       return {
         id: m.id,
@@ -159,10 +201,19 @@ export default async function handler(req, res) {
       };
     });
 
-    // Strict filter: only movies on selected platforms
+    // Filtre strict : seulement les films reellement sur les plateformes choisies
     if (providers) {
       const selectedIds = expandProviderIds(providers.split(",").map(Number));
-      movies = movies.filter((m) => m.streamingOn.some((p) => selectedIds.includes(p.id)));
+      movies = movies.filter((m) =>
+        m.streamingOn.some((p) =>
+          selectedIds.includes(p.id) ||
+          (PROVIDER_ALIASES[p.id] || []).some((a) => selectedIds.includes(a))
+        )
+      );
+    }
+
+    if (movies.length === 0) {
+      return res.status(200).json({ movies: [], empty: { reason: "platform" } });
     }
 
     movies.sort(() => Math.random() - 0.5);
@@ -171,4 +222,3 @@ export default async function handler(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
-
