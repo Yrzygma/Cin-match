@@ -94,12 +94,6 @@ const COUNTRIES = [
   { code: "IN", name: "Inde" },
 ];
 
-const POPULARITY_OPTIONS = [
-  { id: "gems",       label: "Pepites",      desc: "Films confidentiels, hors des sentiers battus" },
-  { id: "balanced",   label: "Moyen",        desc: "Ni blockbuster, ni inconnu" },
-  { id: "mainstream", label: "Grand public", desc: "Valeurs sures, films tres connus" },
-];
-
 const YEAR_MIN = 1950;
 const YEAR_MAX = new Date().getFullYear();
 const RUNTIME_MIN = 60;
@@ -112,7 +106,6 @@ const DEFAULT_MOOD = {
   runtimeMax: RUNTIME_MAX,
   ratingMin: 0,
   countries: [],
-  popularity: "balanced",
   ratingScale10: true,
 };
 
@@ -124,8 +117,7 @@ function isMoodActive(m) {
     m.runtimeMin !== RUNTIME_MIN ||
     m.runtimeMax !== RUNTIME_MAX ||
     m.ratingMin > 0 ||
-    m.countries.length > 0 ||
-    m.popularity !== "balanced"
+    m.countries.length > 0
   );
 }
 
@@ -320,7 +312,7 @@ function MovieCard({ movie, onSwipe, onDetail, seenIds, onToggleSeen }) {
       onTouchStart={e => onStart(e.touches[0].clientX)} onTouchMove={e => { e.preventDefault(); onMove(e.touches[0].clientX, 0.055); }} onTouchEnd={onEnd}
     >
       <div style={{ position: "relative", height: 255 }}>
-        <Poster url={movie.poster} title={movie.title} style={{ position: "absolute", inset: 0 }} />
+        <Poster url={movie.backdrop || movie.poster} title={movie.title} style={{ position: "absolute", inset: 0 }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,transparent 45%,#13131A 100%)" }} />
         <button onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onToggleSeen(movie.id); }}
@@ -364,7 +356,7 @@ function DetailPanel({ movie, onClose }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 200, background: T.bg, overflowY: "auto" }}>
       <div style={{ position: "relative", height: 320, overflow: "hidden" }}>
-        <Poster url={movie.poster} title={movie.title} style={{ position: "absolute", inset: 0, filter: "brightness(0.5)" }} />
+        <Poster url={movie.backdrop || movie.poster} title={movie.title} style={{ position: "absolute", inset: 0, filter: "brightness(0.5)" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,rgba(0,0,0,0.1) 30%,#0A0A0B 100%)" }} />
         <button onClick={onClose} style={{ position: "absolute", top: 20, left: 20, background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 50, width: 40, height: 40, color: "#fff", fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>←</button>
         <div style={{ position: "absolute", bottom: 20, left: 20, right: 20 }}>
@@ -1285,33 +1277,6 @@ useEffect(() => {
                           background: sel ? T.accentSoft : T.card,
                           fontSize: 12.5, fontWeight: 600, color: sel ? T.accent : T.textMid, transition: "all 0.15s" }}>
                         {co.name}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* POPULARITE */}
-              <div style={{ marginBottom: 26 }}>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2, color: T.accent, fontWeight: 700, marginBottom: 10 }}>Popularite</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {POPULARITY_OPTIONS.map(op => {
-                    const sel = mood.popularity === op.id;
-                    return (
-                      <div key={op.id} onClick={() => saveMood({ ...mood, popularity: op.id })}
-                        style={{ borderRadius: 12, padding: "12px 14px", cursor: "pointer", userSelect: "none",
-                          border: sel ? `1.5px solid ${T.accent}` : `1px solid ${T.borderSoft}`,
-                          background: sel ? T.accentSoft : T.card,
-                          display: "flex", alignItems: "center", gap: 11, transition: "all 0.15s" }}>
-                        <div style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
-                          border: `1.5px solid ${sel ? T.accent : T.borderSoft}`,
-                          display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          {sel && <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.accent }} />}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 13.5, fontWeight: 700, color: sel ? T.accent : T.text }}>{op.label}</div>
-                          <div style={{ fontSize: 11.5, color: T.sub, marginTop: 1 }}>{op.desc}</div>
-                        </div>
                       </div>
                     );
                   })}
