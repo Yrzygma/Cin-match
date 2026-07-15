@@ -983,6 +983,20 @@ useEffect(() => {
                   Deja vus{seenIds.size > 0 ? ` (${seenIds.size})` : ""}
                 </button>
               </div>
+
+              {/* Attribution TMDB (requise par les conditions d'utilisation de l'API) */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 26, paddingTop: 16, borderTop: `1px solid ${T.borderSoft}` }}>
+                <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+                  <img
+                    src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg"
+                    alt="TMDB"
+                    style={{ height: 11, opacity: 0.55 }}
+                  />
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", lineHeight: 1.5, maxWidth: 250 }}>
+                    Ce produit utilise l'API TMDB mais n'est ni approuve ni certifie par TMDB.
+                  </span>
+                </a>
+              </div>
             </div>
           )}
 
