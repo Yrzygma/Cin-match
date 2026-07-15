@@ -82,7 +82,7 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
 
-  const { genre, page = 1, providers, mood, list } = req.query;
+  const { genre, providers, mood, list } = req.query;
 
   // ── Mode : liste des plateformes avec les logos officiels TMDB ──
   if (list === "providers") {
@@ -119,10 +119,25 @@ export default async function handler(req, res) {
   const baseQuery = `${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&with_genres=${GENRE_MAP[genre]}&sort_by=popularity.desc&language=fr-FR${moodParam}`;
 
   try {
-    const pageNums = providers ? [1, 2, 3, 4, 5] : [1, 2, 3];
+    // 1er appel : page 1, pour connaitre la taille reelle du catalogue.
+    // Sans cette borne, la page aleatoire envoyee par le client peut viser
+    // au-dela du catalogue (frequent sur les petites plateformes comme
+    // Canal+) et renvoyer "aucun film" par intermittence.
+    const first = await fetch(`${baseQuery}${providerParam}&page=1`).then((r) => r.json());
+    const totalPages = Math.min(first.total_pages || 1, 500); // TMDB plafonne a 500
+
+    const wantedCount = providers ? 5 : 3;
+    // Fenetre de pages aleatoire, bornee au catalogue reel
+    const maxStart = Math.max(1, totalPages - wantedCount + 1);
+    const start = 1 + Math.floor(Math.random() * maxStart);
+    const pageNums = [];
+    for (let p = start; p < start + wantedCount && p <= totalPages; p++) pageNums.push(p);
+
+    // La page 1 est deja chargee : on la reutilise si elle fait partie de la fenetre
     const pages = await Promise.all(
       pageNums.map((p) =>
-        fetch(`${baseQuery}${providerParam}&page=${Number(page) + p - 1}`).then((r) => r.json())
+        p === 1 ? Promise.resolve(first)
+          : fetch(`${baseQuery}${providerParam}&page=${p}`).then((r) => r.json())
       )
     );
 
