@@ -31,24 +31,19 @@ function expandProviderIds(ids) {
   return [...out];
 }
 
-// Popularite -> fourchette de votes (min, max).
-// Des fourchettes fermees rendent les 3 crans reellement exclusifs :
-// sans plafond, les blockbusters remontaient dans "Pepites" a cause du
-// tri par popularite.
-const POPULARITY_TIERS = {
-  gems:       { min: 30,   max: 500 },  // Pepites : confidentiel
-  balanced:   { min: 501,  max: 1000 }, // Moyen
-  mainstream: { min: 1001, max: null }, // Grand public : pas de plafond
-};
+// Plancher fixe de votes : garantit que les notes affichees reposent sur
+// assez d'avis pour etre credibles, sans exposer de reglage a l'utilisateur.
+const MIN_VOTE_COUNT = 50;
 
 // Construit les parametres TMDB a partir des reglages Mood
 function buildMoodParams(mood) {
-  if (!mood) return "";
+  const base = `&vote_count.gte=${MIN_VOTE_COUNT}`;
+  if (!mood) return base;
   let m;
   try {
     m = typeof mood === "string" ? JSON.parse(mood) : mood;
   } catch {
-    return "";
+    return base;
   }
 
   const parts = [];
@@ -69,12 +64,7 @@ function buildMoodParams(mood) {
     parts.push(`&with_origin_country=${m.countries.join("|")}`);
   }
 
-  // Popularite -> fourchette de votes. Le plancher garantit des notes
-  // credibles, le plafond ecarte les blockbusters des crans bas.
-  const tier = POPULARITY_TIERS[m.popularity] ?? POPULARITY_TIERS.balanced;
-  parts.push(`&vote_count.gte=${tier.min}`);
-  if (tier.max) parts.push(`&vote_count.lte=${tier.max}`);
-
+  parts.push(`&vote_count.gte=${MIN_VOTE_COUNT}`);
   return parts.join("");
 }
 
@@ -212,6 +202,7 @@ export default async function handler(req, res) {
         title: m.title,
         year: m.release_date ? parseInt(m.release_date.split("-")[0]) : null,
         poster: `https://image.tmdb.org/t/p/w342${m.poster_path}`,
+        backdrop: m.backdrop_path ? `https://image.tmdb.org/t/p/w780${m.backdrop_path}` : null,
         imdb: m.vote_average ? Math.round(m.vote_average * 10) / 10 : null,
         synopsis: m.overview || "",
         popularity: m.popularity,
